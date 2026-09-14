@@ -597,6 +597,15 @@ instead: at 44px each, a two-row breadcrumb trail pushes the header past 160px
 and eats the map. The rules key on `pointer: coarse`, so a narrow *desktop*
 window keeps its compact controls.
 
+### While the graph loads
+
+The graph view is a lazy chunk of about 140KB, mostly React Flow, so
+`GraphSkeleton` draws the shape it is about to take — a root, connectors, a
+column of children — rather than the word "loading". The layout does not jump
+when the real thing arrives. It pulses, and holds still under
+`prefers-reduced-motion`: a pulse behind content someone is waiting on is
+exactly what that setting is for.
+
 ### Reading a map card
 
 A card carries the title, the tagline and one key point, and its body scrolls

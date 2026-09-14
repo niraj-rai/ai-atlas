@@ -13,6 +13,7 @@ import { Breadcrumb } from './components/Breadcrumb'
 import { SearchPalette } from './components/SearchPalette'
 import { TopicSelect } from './components/TopicSelect'
 import { BrandMark } from './components/BrandMark'
+import { GraphSkeleton } from './components/GraphSkeleton'
 import { Icon } from './components/Icon'
 import { applyTheme, initialPref, resolveTheme, storePref, systemTheme, watchSystem } from './lib/theme'
 import type { Theme, ThemePref } from './lib/theme'
@@ -364,7 +365,7 @@ export default function App() {
             setLegend={setLegend}
           />
         ) : (
-          <Suspense fallback={<div className="graph graph-loading">Loading the graph…</div>}>
+          <Suspense fallback={<GraphSkeleton />}>
             <GraphView
               root={root}
               index={index}
