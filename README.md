@@ -488,6 +488,22 @@ OPEN MAP tag, and clicking a focused doorway enters it.
 Adding a sixth map is: write the tree, add one entry to the registry, and point
 some tile at it.
 
+### Deploying
+
+`.github/workflows/deploy.yml` builds and publishes to GitHub Pages on every
+push to `main`. Lint and the type-checked build run first, so a broken commit
+does not ship.
+
+A project site is served from `/<repo>/` rather than the domain root, so the
+workflow sets `VITE_BASE` from the repository name and `vite.config.ts` reads
+it. A local `npm run build` leaves the base at `/`, where `npm run preview`
+expects it. Deep links survive because routing is hash-based — no 404 fallback
+needed.
+
+**One manual step:** in the repository's *Settings → Pages*, set **Source** to
+**GitHub Actions**. The workflow cannot do this for you, and until it is done
+the deploy job fails.
+
 ### Getting around
 
 Three ways, and they answer different questions. The **breadcrumb** says where
