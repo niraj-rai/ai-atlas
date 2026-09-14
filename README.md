@@ -1,5 +1,8 @@
 # AI Atlas
 
+[![Open the atlas](https://img.shields.io/badge/Open_the_atlas-niraj--rai.github.io-2563eb?style=for-the-badge)](https://niraj-rai.github.io/interactive-learning/)
+[![Deploy](https://github.com/niraj-rai/interactive-learning/actions/workflows/deploy.yml/badge.svg)](https://github.com/niraj-rai/interactive-learning/actions/workflows/deploy.yml)
+
 Learn the whole field by zooming into it. Every topic is a map: you start at the
 globe view, click a region, and the viewport flies into it revealing the
 machinery inside — as deep as the content goes. Some tiles are doorways that

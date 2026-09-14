@@ -302,11 +302,27 @@ export function ZoomMap({ root, index, focusId, onFocus, onEnterWorld, theme, le
                   )
                 : []
 
+            /*
+             * Everything in a label hangs off the tile's top-left corner. Once
+             * that corner scrolls out of view the title goes with it — but the
+             * lower parts of the block, and the formula most of all, can drift
+             * back into the viewport with no title and no visible tile edge to
+             * attach them to. Zoomed in far enough, several such tiles put
+             * their formulas over the same patch of screen, and they read as
+             * scrambled text floating in a corner. So the body of a label is
+             * only drawn while its anchor is somewhere a reader can see.
+             */
+            const anchorX = transform.applyX(node.x0)
+            const anchorY = transform.applyY(node.y0)
+            const anchorOnScreen =
+              anchorX > -1 && anchorY > -1 && anchorX < size.w && anchorY < size.h
+
             // Once a leaf is big enough to read, it earns its key points. They
             // only go on leaves — a parent's body is occupied by its children.
             const bulletFont = Math.max(10.5, tagFont - 0.5)
             const points = keyPointsOf(node.data)
-            const showPoints = isLeaf && projected > 250 && tileH > 175 && points.length > 0
+            const showPoints =
+              isLeaf && anchorOnScreen && projected > 250 && tileH > 175 && points.length > 0
             // Big enough to hold the maths too: it is the densest thing a card
             // can carry, and on this map it is usually the actual answer.
             const formula = node.data.math?.[0]?.tex
