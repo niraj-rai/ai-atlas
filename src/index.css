@@ -1,0 +1,84 @@
+:root {
+  /* ── dark (default) ─────────────────────────────────────────── */
+  --bg: #080b14;
+  --bg-glow: #101728;
+  --bg-panel: #0d111d;
+  --surface: #0a0e18;
+  --surface-2: #141b29;
+  --line: #1d2537;
+  --line-2: #2d3a52;
+  --text: #e6ebf5;
+  --bright: #dbe6f7;
+  --muted: #8a97ae;
+  --dim: #727d91;
+  --ink: #06101d;
+  --glow: #cfe0ff;
+
+  --good: #4ade80;
+  --warn: #facc15;
+  --bad: #f87171;
+  --cool: #7dd3fc;
+  --hot: #fb923c;
+  --info: #38bdf8;
+
+  /* The readable form of whatever content accent is in force. A custom property
+     is substituted where it is DECLARED, not where it is used, so the real
+     derivation lives beside every element that sets --accent (see App.css).
+     This is only the floor, for anything with no accent in scope at all. */
+  --accent-ink: var(--text);
+
+  color-scheme: dark;
+  font-family: ui-sans-serif, -apple-system, 'Segoe UI', Inter, system-ui, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+:root[data-theme='light'] {
+  --bg: #f4f6fb;
+  --bg-glow: #e8edf8;
+  --bg-panel: #ffffff;
+  --surface: #f3f5fa;
+  --surface-2: #e7ebf4;
+  --line: #dde3ee;
+  --line-2: #c3ccdd;
+  --text: #121722;
+  --bright: #1b2230;
+  --muted: #5a6478;
+  --dim: #636a77;
+  --ink: #ffffff;
+  --glow: #2563eb;
+
+  --good: #15803d;
+  --warn: #a16207;
+  --bad: #b91c1c;
+  --cool: #0369a1;
+  --hot: #c2410c;
+  --info: #0369a1;
+
+  --accent-ink: var(--text);
+
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+  transition: background 200ms ease, color 200ms ease;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
