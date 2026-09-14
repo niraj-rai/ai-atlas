@@ -453,6 +453,32 @@
 }
 .icon-btn:hover:not(:disabled) { border-color: var(--line-2); color: var(--text); }
 .icon-btn:disabled { opacity: 0.45; cursor: default; }
+
+/* Visible only to a screen reader: the icon shows the resolved theme, which
+   cannot by itself say whether that came from the device or from a choice. */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* A dot to mark "following the device", so the three states are distinguishable
+   without opening the tooltip. */
+.theme-btn { position: relative; }
+.theme-btn.auto::after {
+  content: '';
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent-ink);
+  opacity: 0.85;
+}
 .icon-btn.play.on { border-color: var(--good); color: var(--good); background: color-mix(in srgb, var(--good) 14%, transparent); }
 
 .tour { display: flex; gap: 5px; flex: 0 0 auto; }

@@ -14,8 +14,8 @@ import { SearchPalette } from './components/SearchPalette'
 import { TopicSelect } from './components/TopicSelect'
 import { BrandMark } from './components/BrandMark'
 import { Icon } from './components/Icon'
-import { applyTheme, initialTheme } from './lib/theme'
-import type { Theme } from './lib/theme'
+import { applyTheme, initialPref, resolveTheme, storePref, systemTheme, watchSystem } from './lib/theme'
+import type { Theme, ThemePref } from './lib/theme'
 import './App.css'
 
 /** How long the guided tour lingers on each stage. */
@@ -61,7 +61,12 @@ export default function App() {
       return true // blocked storage must not cost you the map
     }
   })
-  const [theme, setTheme] = useState<Theme>(initialTheme)
+  /**
+   * The preference is what the reader chose; the theme is what gets painted.
+   * They differ while `system` is following the device.
+   */
+  const [themePref, setThemePref] = useState<ThemePref>(initialPref)
+  const [theme, setTheme] = useState<Theme>(() => resolveTheme(initialPref()))
   const [view, setView] = useState<View>(() => {
     try {
       return localStorage.getItem(VIEW_KEY) === 'cards' ? 'cards' : 'graph'
@@ -119,6 +124,17 @@ export default function App() {
   useEffect(() => {
     applyTheme(theme)
   }, [theme])
+
+  // Follow the device while no explicit choice is held, including when it
+  // changes mid-session — a laptop switching at sunset should carry the app
+  // with it. Storing the preference here, not in applyTheme, is what keeps the
+  // first render from silently pinning a choice the reader never made.
+  useEffect(() => {
+    storePref(themePref)
+    setTheme(resolveTheme(themePref))
+    if (themePref !== 'system') return
+    return watchSystem(setTheme)
+  }, [themePref])
 
   useEffect(() => {
     try {
@@ -289,12 +305,25 @@ export default function App() {
           <span>{mapOpen ? 'Hide map' : 'Show map'}</span>
         </button>
 
+        {/* Three states rather than two, so "follow my device" stays reachable
+            after a reader has once chosen for themselves. */}
         <button
-          className="icon-btn"
-          onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
-          title={theme === 'dark' ? 'Switch to light' : 'Switch to dark'}
+          className={`icon-btn theme-btn${themePref === 'system' ? ' auto' : ''}`}
+          onClick={() =>
+            setThemePref((p) => (p === 'system' ? 'light' : p === 'light' ? 'dark' : 'system'))
+          }
+          title={
+            themePref === 'system'
+              ? `Following your device (${systemTheme()}) — click to keep it light`
+              : themePref === 'light'
+                ? 'Light — click to keep it dark'
+                : 'Dark — click to follow your device again'
+          }
         >
           <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={15} />
+          <span className="sr-only">
+            {themePref === 'system' ? 'Theme follows your device' : `Theme is ${themePref}`}
+          </span>
         </button>
 
         <button

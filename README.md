@@ -520,6 +520,21 @@ workflow sets `VITE_BASE` from the repository name and `vite.config.ts` reads
 it, defaulting to `/` for local builds. Taking it from the repository name means
 renaming the repo cannot silently break the asset URLs.
 
+### Light and dark
+
+The app follows the device unless the reader has said otherwise, and reacts if
+the device changes mid-session. Where no preference can be read at all — a
+browser answering "no preference", or one without `matchMedia` — it opens
+**light**: `systemTheme()` tests for `prefers-color-scheme: dark` and treats
+everything else as light, rather than testing for light and defaulting to dark.
+
+The button cycles *follow the device → light → dark → follow the device*, so
+choosing for yourself is not a one-way door; a dot marks the following state.
+Only an explicit choice is stored, and choosing to follow again removes it.
+Painting the theme and remembering a preference are deliberately separate: doing
+both on every render is what made the old version pin a choice on first load
+and stop following the device thereafter.
+
 ### Getting around
 
 Three ways, and they answer different questions. The **breadcrumb** says where
