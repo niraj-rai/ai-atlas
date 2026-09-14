@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="ground" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f1524"/>
+      <stop offset="1" stop-color="#141c30"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#ground)"/>
+
+  <!-- the six era accents as a rule along the top: the timeline the app opens on -->
+  <g>
+    <rect x="0" y="0" width="200" height="6" fill="#94a3b8"/>
+    <rect x="200" y="0" width="200" height="6" fill="#a78bfa"/>
+    <rect x="400" y="0" width="200" height="6" fill="#22d3ee"/>
+    <rect x="600" y="0" width="200" height="6" fill="#fb923c"/>
+    <rect x="800" y="0" width="200" height="6" fill="#4ade80"/>
+    <rect x="1000" y="0" width="200" height="6" fill="#f472b6"/>
+  </g>
+
+  <!-- the mark, at the same proportions as the favicon -->
+  <g transform="translate(96 170) scale(2.6)">
+    <g fill="none" stroke="#7c8798" stroke-width="2.4" stroke-linecap="round">
+      <circle cx="32" cy="32" r="20"/>
+      <ellipse cx="32" cy="32" rx="8.6" ry="20"/>
+      <path d="M13.2 25.2h37.6M13.2 38.8h37.6"/>
+    </g>
+    <g stroke="#cfe0ff" stroke-width="2.6" stroke-linecap="round" opacity="0.95">
+      <path d="M23 21.5 43.5 27M23 21.5 30 43M43.5 27 30 43"/>
+    </g>
+    <circle cx="23" cy="21.5" r="5.2" fill="#a78bfa"/>
+    <circle cx="43.5" cy="27" r="4.6" fill="#22d3ee"/>
+    <circle cx="30" cy="43" r="4.6" fill="#4ade80"/>
+  </g>
+
+  <g font-family="Helvetica Neue, Helvetica, Arial, sans-serif" fill="#e6ebf5">
+    <text x="300" y="248" font-size="86" font-weight="700" letter-spacing="-1.5">AI Atlas</text>
+    <text x="300" y="318" font-size="38" fill="#cfe0ff" font-weight="400">The journey from symbolic AI to AGI</text>
+    <text x="300" y="386" font-size="26" fill="#7c8798">Six zoomable maps, from linear algebra to the frontier</text>
+  </g>
+
+  <g font-family="Helvetica Neue, Helvetica, Arial, sans-serif" fill="#7c8798" font-size="25">
+    <text x="300" y="476"><tspan fill="#a78bfa" font-weight="700">353</tspan> topics</text>
+    <text x="512" y="476"><tspan fill="#22d3ee" font-weight="700">488</tspan> worked examples</text>
+    <text x="852" y="476"><tspan fill="#4ade80" font-weight="700">26</tspan> playgrounds</text>
+  </g>
+  <text x="300" y="540" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="22" fill="#5c6678">niraj-rai.github.io/interactive-learning</text>
+</svg>
