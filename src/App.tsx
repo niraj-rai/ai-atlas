@@ -12,6 +12,7 @@ import { DetailPanel } from './components/DetailPanel'
 import { Breadcrumb } from './components/Breadcrumb'
 import { SearchPalette } from './components/SearchPalette'
 import { TopicSelect } from './components/TopicSelect'
+import { BrandMark } from './components/BrandMark'
 import { Icon } from './components/Icon'
 import { applyTheme, initialTheme } from './lib/theme'
 import type { Theme } from './lib/theme'
@@ -221,7 +222,7 @@ export default function App() {
     <div className="app">
       <header className="topbar">
         <div className="brand">
-          <Icon name="compass" size={14} />
+          <BrandMark size={18} />
           <span className="brand-topic">AI Atlas</span>
         </div>
 

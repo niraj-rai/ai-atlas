@@ -1,11 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="AI Atlas">
   <!--
-    The app's own root canvas, in miniature: a treemap of the six eras, in the
-    six accent colours the AI map actually uses. Five tiles rather than six, so
-    the shapes stay distinguishable at 16px.
+    Android adaptive icons crop to a circle inscribed in the middle ~80%, so the
+    same mark is drawn smaller inside a full-bleed ground.
   -->
-  <rect width="64" height="64" rx="14" fill="#0f1524"/>
-  <g>
+  <rect width="64" height="64" fill="#0f1524"/>
+  <g transform="translate(32 32) scale(0.62) translate(-32 -32)">
     <rect x="8"  y="8"  width="27" height="27" rx="4" fill="#a78bfa"/>
     <rect x="38" y="8"  width="18" height="27" rx="4" fill="#22d3ee"/>
     <rect x="8"  y="38" width="18" height="18" rx="4" fill="#fb923c"/>

@@ -488,6 +488,19 @@ OPEN MAP tag, and clicking a focused doorway enters it.
 Adding a sixth map is: write the tree, add one entry to the registry, and point
 some tile at it.
 
+### The mark
+
+`public/favicon.svg` is the app's own root canvas in miniature — a treemap of
+the eras in the six accent colours the AI map actually uses — and
+`src/components/BrandMark.tsx` draws the same shapes inline for the header. They
+are one drawing in two places and should change together.
+
+Around it: a 180px `apple-touch-icon.png`, because iOS ignores the manifest's
+icons for the home screen; 192 and 512 PNGs plus a full-bleed maskable variant
+for Android, whose adaptive icons crop to a circle inside the middle 80%; a
+32px PNG for browsers that will not take the SVG; and `site.webmanifest` with a
+`theme_color`, so an installed copy opens standalone rather than in a tab.
+
 ### Deploying
 
 Live at **https://niraj-rai.github.io/interactive-learning/**, published by
