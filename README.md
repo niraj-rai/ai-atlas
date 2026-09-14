@@ -490,13 +490,17 @@ some tile at it.
 
 ### Deploying
 
-`npm run build` emits a static `dist/` — no server, no API, no environment
-variables. Any static host will serve it, and routing is hash-based, so deep
-links need no 404 fallback or rewrite rules.
+Live at **https://niraj-rai.github.io/interactive-learning/**, published by
+`.github/workflows/deploy.yml` on every push to `main`. Lint and the
+type-checked build run first, so a broken commit does not ship.
 
-If a host ever serves the app from a subpath rather than the domain root, set
-`VITE_BASE=/that-path/` for the build; `vite.config.ts` reads it and defaults to
-`/`.
+The build is a static `dist/` — no server, no API, no environment variables —
+and routing is hash-based, so deep links need no 404 fallback or rewrite rules.
+
+A project site is served from `/<repo>/` rather than the domain root, so the
+workflow sets `VITE_BASE` from the repository name and `vite.config.ts` reads
+it, defaulting to `/` for local builds. Taking it from the repository name means
+renaming the repo cannot silently break the asset URLs.
 
 ### Getting around
 
