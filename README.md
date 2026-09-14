@@ -569,6 +569,15 @@ narrative nodes — eras, historical events, and open arguments such as *The AI
 winters* or *Capability is not goals* — where inventing advice would be worse
 than saying nothing; the panel simply omits the block.
 
+### Where it leads
+
+`roots` on a node points back at the mathematics an idea came from; `leadsTo`
+points forward at what it became, and the panel shows them as *Classical roots*
+and *Where it leads*. Forty-two Classical ML nodes carry the forward line —
+logistic regression to the output head of a language model, boosting's residual
+fitting to residual connections, k-means to the codebooks behind image
+tokenizers. Only where the line is real: "both use matrices" is not a lineage.
+
 ### Worked examples
 
 `src/content/examples.ts` maps a node id to one or more `Example`s. Each declares
@@ -576,7 +585,7 @@ its editable inputs and a pure `run(values)` that returns the working and the
 result, so the panel renders a live calculator with no per-topic UI. Adding one
 to any node is a single entry in that file.
 
-**477 examples across 86% of the atlas** (305 of 353 nodes). Every node with distinct computable
+**488 examples across 89% of the atlas** (316 of 353 nodes). Every node with distinct computable
 content has one. The remaining nodes are of three kinds, and a calculator on any
 of them would be invented rather than illustrative:
 
@@ -596,8 +605,8 @@ fetched when someone opens that lab, one encoding at a time.
 
 - [x] LLM inference pipeline — prompt → tokens → embeddings → transformer → sampling → text
 - [x] Classical ML, Deep Learning (CNN/RNN), and the AI timeline
-- [ ] **Training**: loss, backpropagation, gradient descent, pretraining vs fine-tuning vs RLHF
-- [ ] **Classical ML**: linear and logistic regression, trees, clustering — and the line from each to what LLMs do
+- [x] **Training**: loss, backpropagation, gradient descent, pretraining vs fine-tuning vs RLHF
+- [x] **Classical ML**: linear and logistic regression, trees, clustering — and the line from each to what LLMs do, written out on 42 nodes as *Where it leads*
 - [x] **The maths layer**: linear algebra, probability, calculus, statistics, information theory and numerical stability, as its own map reachable from Classical ML and Deep Learning
 - [x] Live playgrounds: tokenizer and sampling/temperature
 - [x] BPE merge stepper, line-icon system, flow animation, Simple mode and a guided tour
@@ -616,4 +625,10 @@ fetched when someone opens that lab, one encoding at a time.
 - [x] Optimiser surfaces, receptive-field growth, residual-stream accumulation
 - [x] Worked examples on the overview nodes, attribution on 90 nodes, and a React Flow graph view
 - [x] Search across every map, and a KL divergence tile with a draw-your-own-distributions playground
-- [ ] Worked examples on the ~87 remaining nodes where a calculator would currently be invented rather than illustrative
+- [x] Definition, when to use it and where it shows up on all 353 nodes
+- [x] Worked examples wherever one is illustrative rather than invented — 488 over 316 of 353 nodes
+
+The last 37 nodes are deliberately without a calculator: eras (*Statistical
+Learning*), historical events (*ImageNet 2012*), open arguments (*Capability is
+not goals*) and the doorways between maps. There is no honest sum to put on
+them, and inventing one would teach a number rather than an idea.

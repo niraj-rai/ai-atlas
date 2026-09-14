@@ -7295,7 +7295,162 @@ function collect(...parts: Record<string, Example[]>[]): Record<string, Example[
   return out
 }
 
+/**
+ * The last pipeline steps without a calculator. Each is a step a reader watches
+ * happen but could not previously price — what the scaffolding costs, where the
+ * compute lands, how little a norm layer weighs.
+ */
+const PIPELINE: Record<string, Example[]> = {
+  'raw-text': [{ level: 'basic', title: 'What you typed, and what it costs', blurb: 'Characters are free to write and are not what you are billed for.',
+    inputs: [n('chars', 'characters you typed', 240, 1, 20000, 1, 'Ordinary English runs about four characters to the token, so this is roughly four times the token count.'),
+      n('perTok', 'characters per token', 4, 1, 12, 0.1, 'Drop it towards 1 for code, hashes or a language the tokenizer was not built for — the same text then costs several times more.'),
+      n('price', 'price per million input tokens ($)', 3, 0.01, 100, 0.01, 'Input is usually the cheaper half; output costs more per token.')],
+    where: [{ sym: 'characters ÷ chars-per-token', is: 'roughly how many tokens your text becomes' },
+      { sym: 'chars per token', is: 'about 4 for English prose, far lower for code and rare scripts' }],
+    how: 'The model never sees characters, so the only length that matters is the token count. The ratio is what varies between languages and content types, and it is why the same paragraph costs different amounts in different languages.',
+    run: (v) => { const toks = v.chars / v.perTok;
+      return ({ formula: 'tokens ≈ characters ÷ characters-per-token',
+        steps: [['characters', String(v.chars)], ['ratio', `${f(v.perTok, 1)} chars/token`]],
+        result: `${Math.round(toks).toLocaleString()} tokens · $${f((toks / 1e6) * v.price, 5)}`,
+        note: 'One message is nothing. The same arithmetic over a million support conversations a month is a budget line.' }) } }],
+
+  'chat-template': [{ level: 'basic', title: 'What the scaffolding costs', blurb: 'Role markers are tokens too, and you pay for them on every turn.',
+    inputs: [n('turns', 'turns in the conversation', 20, 1, 500, 1, 'Every turn re-sends the whole history, so the overhead is charged again each time.'),
+      n('overhead', 'template tokens per turn', 7, 0, 40, 1, 'The role markers and separators wrapped around each message. Small, and paid per turn per request.'),
+      n('content', 'content tokens per turn', 60, 1, 2000, 1, 'The words you and the model actually exchanged.')],
+    where: [{ sym: 'per turn', is: 'content plus the markers wrapped around it' },
+      { sym: '× turns', is: 'because the whole history is re-sent with every new request' }],
+    how: 'Add the overhead to each turn, then note that turn n re-sends turns 1…n. The scaffolding therefore grows quadratically across a conversation, which is why long chats get expensive faster than their length suggests.',
+    run: (v) => { const per = v.content + v.overhead; const resent = (v.turns * (v.turns + 1)) / 2 * per;
+      const overheadShare = (v.overhead / per) * 100;
+      return ({ formula: 'tokens sent ≈ Σ(turn) (content + template)',
+        steps: [['per turn', `${per} tokens`], ['template share', `${f(overheadShare, 1)}%`], ['turns', String(v.turns)]],
+        result: `${Math.round(resent).toLocaleString()} tokens across the conversation`,
+        note: 'Nothing is wrong here — it is simply what a stateless model costs. Prefix caching exists to stop you paying full price for the repeated part.' }) } }],
+
+  'special-tokens': [{ level: 'basic', title: 'Reserved slots, and what they cost', blurb: 'Control markers occupy vocabulary, and vocabulary is paid for twice.',
+    inputs: [n('vocab', 'vocabulary (thousands)', 50, 1, 500, 1, 'The whole table, control markers included.'),
+      n('special', 'special tokens reserved', 256, 0, 2000, 1, 'Modern models reserve a block of spares so new control markers can be added without retraining the tokenizer.'),
+      n('dim', 'model width', 768, 64, 16384, 64, 'Every reserved slot still gets a full-width row in the embedding table, and another in the unembedding.')],
+    where: [{ sym: 'reserved × d', is: 'parameters held by the control markers in one table' },
+      { sym: '× 2', is: 'because the vocabulary appears at both the input and the output' }],
+    how: 'Multiply the reserved count by the width, then double it for the two tables. The answer is small next to the model — which is the point: reserving spares is cheap insurance against needing a new marker later.',
+    run: (v) => { const V = v.vocab * 1000; const cost = v.special * v.dim * 2; const table = V * v.dim * 2;
+      return ({ formula: 'reserved cost = specials × d × 2',
+        steps: [['reserved slots', v.special.toLocaleString()], ['whole vocabulary tables', `${f(table / 1e6, 1)}M`]],
+        result: `${f(cost / 1e6, 2)}M parameters — ${f((cost / table) * 100, 2)}% of the tables`,
+        note: 'Cheap to reserve, expensive to lack: adding a control marker after training means resizing the embedding table and retraining around it.' }) } }],
+
+  activation: [{ level: 'basic', title: 'Where the compute actually lands', blurb: 'The nonlinearity runs at the widened dimension, not the model width.',
+    inputs: [n('dim', 'model width d', 4096, 64, 16384, 64, 'The width in the residual stream, before the block widens it.'),
+      n('mult', 'expansion multiple', 4, 1, 8, 0.5, 'How much wider the block goes. Four is the classic choice; gated activations often use around 8/3 across three matrices.'),
+      n('seq', 'tokens in the batch', 4096, 1, 131072, 1, 'The activation is applied independently to every token, so this multiplies everything.')],
+    where: [{ sym: 'd × multiple', is: 'the widened dimension the activation runs across' },
+      { sym: '× tokens', is: 'once per token, with no mixing between them' }],
+    how: 'Count the values the nonlinearity touches: the widened dimension times the token count. It is cheap arithmetic per value, but it happens on several times more values than the residual stream carries — which is why the activation function choice shows up in profiles at all.',
+    run: (v) => { const wide = Math.round(v.dim * v.mult); const vals = wide * v.seq;
+      return ({ formula: 'values = tokens × (d × multiple)',
+        steps: [['widened dimension', wide.toLocaleString()], ['tokens', v.seq.toLocaleString()]],
+        result: `${f(vals / 1e9, 2)}B activations per layer`,
+        note: 'And each must be kept for the backward pass, which is why activation memory rather than weight memory is usually what runs out first.' }) } }],
+
+  'down-projection': [{ level: 'basic', title: 'The second of the two matrices', blurb: 'It brings the widened vector back, and it costs as much as the one that widened it.',
+    inputs: [n('dim', 'model width d', 4096, 64, 16384, 64, 'The width it must return to, so the stream can add the result.'),
+      n('mult', 'expansion multiple', 4, 1, 8, 0.5, 'The width it is coming down from.'),
+      n('layers', 'layers', 32, 1, 200, 1, 'Every block has its own pair, so the total scales with depth.')],
+    where: [{ sym: '(d × multiple) × d', is: 'the down-projection weights' },
+      { sym: '× 2', is: 'the up-projection is the same size, transposed' }],
+    how: 'The pair together is 2 × multiple × d² per block. At the usual multiple of 4 that is 8d², against attention’s 4d² — which is why the feedforward half holds roughly two-thirds of a transformer’s parameters.',
+    run: (v) => { const one = Math.round(v.dim * v.mult) * v.dim; const pair = one * 2; const all = pair * v.layers;
+      return ({ formula: 'block pair = 2 × multiple × d²',
+        steps: [['down-projection', `${f(one / 1e6, 1)}M`], ['with its partner', `${f(pair / 1e6, 1)}M`]],
+        result: `${f(all / 1e9, 2)}B parameters across ${v.layers} layers`,
+        note: 'Mixture-of-experts models replace this one block with many and use a couple per token — the parameters multiply while the compute per token does not.' }) } }],
+
+  'final-norm': [{ level: 'basic', title: 'How little a norm layer weighs', blurb: 'One scale per dimension, against billions elsewhere.',
+    inputs: [n('dim', 'model width d', 4096, 64, 16384, 64, 'A norm layer holds one learned scale per dimension — that is the whole of it.'),
+      n('layers', 'layers', 32, 1, 200, 1, 'Pre-norm blocks carry two each, plus this final one.'),
+      n('total', 'model size (billions)', 7, 0.01, 1000, 0.01, 'What the norms are being compared against.')],
+    where: [{ sym: 'd per norm', is: 'RMSNorm keeps a scale and nothing else; LayerNorm adds a shift, doubling it' },
+      { sym: '2L + 1', is: 'two per block, plus the final one before the output head' }],
+    how: 'Count the norms and multiply by the width. The answer is a rounding error, which is worth knowing: normalisation changes training enormously while costing essentially nothing in parameters.',
+    run: (v) => { const norms = 2 * v.layers + 1; const p = norms * v.dim; const total = v.total * 1e9;
+      return ({ formula: 'norm parameters = (2L + 1) × d',
+        steps: [['norm layers', String(norms)], ['parameters each', v.dim.toLocaleString()]],
+        result: `${(p / 1000).toFixed(1)}k parameters — ${f((p / total) * 100, 4)}% of the model`,
+        note: 'All that influence for four thousandths of a percent. Removing them, by contrast, usually stops the model training at all.' }) } }],
+
+  'softmax-out': [{ level: 'basic', title: 'Logits into probabilities', blurb: 'Four scores, one temperature, and the distribution you sample from.',
+    inputs: [n('a', 'top logit', 8.2, -10, 20, 0.1, 'The model’s favourite. Only the gaps between logits matter, not their absolute size.'),
+      n('b', 'second logit', 7.4, -10, 20, 0.1, 'Bring it level with the top one and the choice becomes a coin flip.'),
+      n('c', 'third logit', 5.1, -10, 20, 0.1, 'Further back. Notice how quickly the exponential buries it.'),
+      n('d', 'fourth logit', 2.0, -10, 20, 0.1, 'Effectively out of the running unless the temperature is high.'),
+      n('temp', 'temperature', 1, 0.1, 2.5, 0.05, 'Divides every logit before exponentiating: below 1 sharpens towards the top token, above 1 flattens everything.')],
+    where: [{ sym: 'z ÷ T', is: 'each logit divided by the temperature' },
+      { sym: 'e^z', is: 'exponentiate, which turns a gap into a ratio' },
+      { sym: '÷ Σ', is: 'divide by the total so the four sum to one' }],
+    how: 'Divide by the temperature, exponentiate, normalise. Because the exponential is involved, a gap of 1 in the logits is a factor of e in the probabilities — which is why a seemingly small logit bias changes the output so decisively.',
+    run: (v) => { const z = [v.a, v.b, v.c, v.d].map((x) => x / v.temp); const p = softmax(z);
+      return ({ formula: 'p = softmax(z ÷ T)',
+        steps: [['top', `${f(p[0] * 100, 1)}%`], ['second', `${f(p[1] * 100, 1)}%`], ['third', `${f(p[2] * 100, 1)}%`], ['fourth', `${f(p[3] * 100, 1)}%`]],
+        result: `top token ${f(p[0] * 100, 1)}% of the mass`,
+        note: v.temp < 0.5 ? 'Near-greedy: the top token takes almost everything and the output becomes reproducible and repetitive.'
+          : v.temp > 1.5 ? 'Flattened far enough that the fourth token is a real possibility — this is where output starts to wander.'
+            : 'A working range: the top token leads without the rest being impossible.' }) } }],
+
+  detokenize: [{ level: 'basic', title: 'Back into readable text', blurb: 'Pieces reassemble, and a character can span more than one of them.',
+    inputs: [n('tokens', 'tokens generated', 500, 1, 100000, 1, 'What the model emitted.'),
+      n('perTok', 'characters per token', 4, 1, 12, 0.1, 'The same ratio as going in, which is why output length in characters is only ever an estimate.'),
+      n('rate', 'tokens per second', 40, 1, 500, 1, 'Generation speed. Streaming shows each token as it arrives, so this sets the reading pace.')],
+    where: [{ sym: 'tokens × chars-per-token', is: 'roughly the length of the finished text' },
+      { sym: '÷ tokens per second', is: 'how long the reader waits for all of it' }],
+    how: 'Multiply out for the text, divide for the time. The subtlety is that a multi-byte character can span several tokens, so a streaming interface must buffer rather than print each token the moment it arrives — otherwise an emoji renders as two pieces of rubbish.',
+    run: (v) => ({ formula: 'characters ≈ tokens × chars-per-token',
+      steps: [['tokens', v.tokens.toLocaleString()], ['at', `${f(v.rate, 0)} tokens/s`]],
+      result: `≈${Math.round(v.tokens * v.perTok).toLocaleString()} characters in ${f(v.tokens / v.rate, 1)}s`,
+      note: 'Streaming does not make this faster; it makes the wait legible, which is most of what the reader experiences as speed.' }) }],
+
+  'cml-gbm-libs': [{ level: 'harder', title: 'Why the histogram trick wins', blurb: 'Testing every cut point versus testing 255 of them.',
+    inputs: [n('rows', 'training rows', 1000000, 1000, 50000000, 1000, 'The exact method tries a split between every pair of neighbouring values, so its work grows with this.'),
+      n('features', 'features', 100, 1, 5000, 1, 'Every feature is searched at every node.'),
+      n('bins', 'histogram bins', 255, 8, 512, 1, 'The approximation: bucket the values first, then consider only bucket edges. 255 fits in a byte, which is why it is the usual choice.')],
+    where: [{ sym: 'rows × features', is: 'candidate splits the exact method considers per node' },
+      { sym: 'bins × features', is: 'what the histogram method considers instead' }],
+    how: 'Bucket the values once, then search bucket edges rather than every distinct value. The split chosen is almost always the same one, and the search stops depending on the row count — which is the whole reason boosting scaled to millions of rows.',
+    run: (v) => { const exact = v.rows * v.features; const hist = v.bins * v.features;
+      return ({ formula: 'candidates per node: rows × features → bins × features',
+        steps: [['exact search', exact.toLocaleString()], ['histogram search', hist.toLocaleString()]],
+        result: `${f(exact / hist, 0)}× fewer candidates per node`,
+        note: 'The accuracy cost is close to nothing, because a split between two nearly identical values was never going to be the meaningful one.' }) } }],
+
+  'dl-batchnorm': [{ level: 'basic', title: 'What normalisation weighs', blurb: 'Two numbers per channel, and it changes everything about training.',
+    inputs: [n('channels', 'channels in the layer', 256, 1, 4096, 1, 'BatchNorm keeps a scale and a shift for each one.'),
+      n('layers', 'normalised layers', 50, 1, 200, 1, 'Most convolutional architectures normalise after nearly every convolution.'),
+      n('params', 'model parameters (millions)', 25, 0.1, 1000, 0.1, 'What it is being compared against — a ResNet-50 is about 25M.')],
+    where: [{ sym: '2 per channel', is: 'one learned scale and one learned shift' },
+      { sym: 'running mean and variance', is: 'two more per channel, stored but not learned' }],
+    how: 'Multiply channels by two, then by the number of normalised layers. The result is a fraction of a percent — and yet removing it typically costs you the ability to use a large learning rate at all.',
+    run: (v) => { const p = v.channels * 2 * v.layers; const total = v.params * 1e6;
+      return ({ formula: 'parameters = 2 × channels × layers',
+        steps: [['per layer', (v.channels * 2).toLocaleString()], ['layers', String(v.layers)]],
+        result: `${(p / 1000).toFixed(1)}k parameters — ${f((p / total) * 100, 3)}% of the model`,
+        note: 'The running statistics are the part that bites in practice: they are estimated from batches during training and frozen at inference, which is why a tiny batch size degrades a BatchNorm model so badly.' }) } }],
+
+  'dl-generator': [{ level: 'basic', title: 'Two networks, one budget', blurb: 'You train both, and only ship one.',
+    inputs: [n('gen', 'generator parameters (millions)', 30, 0.1, 1000, 0.1, 'The half you keep — it is what actually produces images afterwards.'),
+      n('disc', 'discriminator parameters (millions)', 25, 0.1, 1000, 0.1, 'The half you throw away once training ends, having paid to train it.'),
+      n('steps', 'training steps (thousands)', 500, 1, 5000, 1, 'Both networks are updated at every step.')],
+    where: [{ sym: 'generator + discriminator', is: 'what you train' },
+      { sym: 'generator alone', is: 'what you deploy' }],
+    how: 'Add both to get the training cost, then compare with the generator alone. The discriminator is pure overhead at inference — the price of having had an opponent good enough to teach with.',
+    run: (v) => { const total = v.gen + v.disc; const wasted = (v.disc / total) * 100;
+      return ({ formula: 'trained = generator + discriminator,  shipped = generator',
+        steps: [['trained', `${f(total, 1)}M`], ['shipped', `${f(v.gen, 1)}M`], ['steps', `${v.steps}k`]],
+        result: `${f(wasted, 0)}% of the trained parameters are discarded`,
+        note: 'Keeping the two in balance is the hard part: if either wins decisively the other stops receiving a useful gradient, and training stalls with no error to show for it.' }) } }],
+}
+
 export const EXAMPLES: Record<string, Example[]> = collect(
   CORE, CLASSICAL, DEEP, LLM, WIDER, REST, CONTAINERS, MATHS, MATHS_MORE, MATHS_BASICS,
-  LAB_WORKINGS, LAB_LADDERS, LAB_LADDERS_2,
+  LAB_WORKINGS, LAB_LADDERS, LAB_LADDERS_2, PIPELINE,
 )

@@ -109,6 +109,13 @@ export interface TopicNode {
   math?: MathBit[]
   /** Where this idea comes from in classical ML / maths. */
   roots?: string
+  /**
+   * The other direction: what this idea grew into. `roots` points back at the
+   * mathematics an idea came from; this points forward at the modern thing it
+   * became, so a reader on the Classical ML map can see the thread running to
+   * what a language model actually does.
+   */
+  leadsTo?: string
   /** Who introduced it, and when. Shown in the panel and on a zoomed card. */
   credit?: { who: string; when: string }
   /** Attaches a live, hands-on widget to this node. */

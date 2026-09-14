@@ -1,5 +1,5 @@
 import type { TopicNode, World, WorldId } from './types'
-import { ORIENTATION } from './orientation'
+import { LEADS_TO, ORIENTATION } from './orientation'
 import { aiWorld } from './ai'
 import { llmWorld } from './llm'
 import { classicalMlWorld } from './classicalMl'
@@ -60,6 +60,7 @@ function applyOrientation(node: TopicNode): void {
     node.whenToUse ??= about.whenToUse
     node.applications ??= about.applications
   }
+  node.leadsTo ??= LEADS_TO[node.id]
   node.children?.forEach(applyOrientation)
 }
 for (const world of Object.values(WORLDS)) applyOrientation(world.root)

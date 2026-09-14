@@ -288,6 +288,16 @@ export function DetailPanel({ node, world, onFocus, onEnterWorld, onLeaveWorld, 
           </section>
         )}
 
+        {data.leadsTo && !plainLeads && (
+          <section className="panel-section">
+            <h2>
+              <Icon name="spark" size={12} />
+              Where it leads
+            </h2>
+            <p className="panel-roots">{data.leadsTo}</p>
+          </section>
+        )}
+
         {node.children && node.children.length > 0 && (
           <section className="panel-section">
             <h2>

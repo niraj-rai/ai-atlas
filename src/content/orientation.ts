@@ -4456,3 +4456,98 @@ export const ORIENTATION: Record<string, Orientation> = {
     ],
   },
 }
+
+/**
+ * The thread forward: what each classical idea grew into. `roots` on a modern
+ * node points back at the mathematics it came from; this points the other way,
+ * so a reader on the Classical ML map can see where the technique in front of
+ * them reappears in a language model.
+ *
+ * Only where the line is real. "Both use matrices" is not a lineage.
+ */
+export const LEADS_TO: Record<string, string> = {
+  'classical-ml':
+    'Nothing here was discarded. A transformer is trained by the same loop, on the same kind of loss, checked with the same statistics — it just learns its own features instead of being handed them.',
+  'cml-loop':
+    'Unchanged at any scale. A frontier model runs this loop; it simply runs it on trillions of tokens with a few hundred billion parameters.',
+  'cml-data':
+    'The one part that did change. Deep learning stopped requiring you to design the columns — the model learns its own features, which is why raw pixels and raw text became usable at all.',
+  'cml-loss':
+    'Cross-entropy, the loss for predicting a category, is exactly the loss a language model is trained on — the category just happens to be "which of 100,000 tokens comes next".',
+  'cml-gradient':
+    'Every neural network is trained this way. Adam and AdamW are gradient descent with a memory of past steps and a per-parameter step size.',
+  'cml-batch':
+    'Still the unit of training. A frontier run uses millions of tokens per batch, split across thousands of GPUs, but the reason is the one on this page.',
+  'cml-lr-choice':
+    'Still the setting most likely to ruin a run. Transformer pretraining adds a warmup precisely because a large early step destabilises training.',
+  'cml-overfitting':
+    'It reappears as benchmark contamination: a model that has seen the test set scores brilliantly and fails on anything new. Same failure, larger stage.',
+  'cml-capacity':
+    'Becomes the parameter count, and the examples-per-parameter question becomes the token-per-parameter ratio that scaling laws answer.',
+  'cml-early-stopping':
+    'Survives as checkpoint selection — frontier runs keep the checkpoint that evaluated best, not the last one.',
+  'cml-more-data':
+    'Became the central finding of the era. Chinchilla showed models of the time were too large for their data: the same money bought more by training a smaller model on more tokens.',
+  'cml-split':
+    'The hardest thing to keep honest at scale. When training data is most of the web, guaranteeing a benchmark is unseen is nearly impossible — which is why fresh evaluations matter.',
+  'cml-regression':
+    'Reward models in RLHF are regressions: they predict a single number — how good a human would judge this response — from a model’s internal representation.',
+  'cml-linear':
+    'Every dense layer in every network is this, without the constant term and stacked a hundred deep with a nonlinearity between.',
+  'cml-regularisation':
+    'Weight decay, present in every large training run, is this penalty under another name.',
+  'cml-ridge':
+    'The L2 penalty is weight decay. AdamW exists specifically to apply it correctly, and its name is the W.',
+  'cml-lasso':
+    'Sparsity became a hardware question: pruning and sparse models cut weights to exactly zero for the same reason, now to fit in memory rather than to read the model.',
+  'cml-classification':
+    'Predicting the next token is classification over the vocabulary. Everything on this branch applies, at 100,000 classes.',
+  'cml-logistic':
+    'Widen it to many classes and put it on top of a transformer and you have the output head of a language model.',
+  'cml-log-odds':
+    'The log-odds scale is where a model actually works. The "logits" every API exposes are named after exactly this.',
+  'cml-threshold':
+    'Reappears wherever a score becomes an action: a moderation cut-off, a confidence level for escalating to a human, a router choosing a model.',
+  'cml-softmax-multi':
+    'This is the final layer of every language model, turning one score per vocabulary token into a distribution to sample from.',
+  'cml-mle':
+    'Pretraining is maximum likelihood. The objective is to make the observed text as unsurprising as possible under the model.',
+  'cml-knn':
+    'Retrieval-augmented generation is nearest neighbours, over embeddings rather than raw features, with a vector index doing the search.',
+  'cml-naive-bayes':
+    'Still the sensible baseline. When a language model is proposed for a text classification job, this is what it should have to beat on cost as well as accuracy.',
+  'cml-svm':
+    'The margin idea — push unlike things apart, pull like things together — became contrastive learning, which is how most embedding models are trained.',
+  'cml-kernel-trick':
+    'Attention is a similarity function applied to every pair, computed without building the space it implies. The family resemblance is close enough that attention has been analysed as a kernel method.',
+  'cml-trees':
+    'Did not get replaced. On tabular data gradient boosting still beats neural networks often enough that reaching for a transformer is usually the wrong instinct.',
+  'cml-forest':
+    'Averaging many noisy predictors reappears as self-consistency: sample a model’s answer several times and take the majority.',
+  'cml-boosting':
+    'Fitting what the model so far gets wrong is the same instinct as a residual connection — learn the correction, not the whole answer.',
+  'cml-residual-fit':
+    'Directly ancestral to residual connections: each block learns what to add to the running total rather than replacing it.',
+  'cml-shrinkage':
+    'Small steps, many of them. The learning rate in a transformer run does the same job for the same reason.',
+  'cml-unsupervised':
+    'Became the whole game. Pretraining is unsupervised: the labels are manufactured from the text itself by hiding the next token.',
+  'cml-kmeans':
+    'Vector quantisation clusters exactly this way to build the codebooks behind image tokenizers and some audio models.',
+  'cml-pca':
+    'Embeddings are the same idea learned rather than computed: represent something by its position in a space of far fewer dimensions than the raw input.',
+  'cml-eigen':
+    'The same decomposition underlies LoRA, which fine-tunes a large model through a deliberately low-rank update.',
+  'cml-anomaly':
+    'Reappears as out-of-distribution detection and guardrails: flagging an input unlike anything the model was trained on, before it answers confidently anyway.',
+  'cml-evaluation':
+    'The discipline that did not scale with the models. Most arguments about whether a frontier system is good are arguments about this page.',
+  'cml-metrics':
+    'Retrieval quality in a RAG system is precision and recall at k — the same two numbers, applied to which documents came back.',
+  'cml-crossval':
+    'Too expensive to run on a frontier model, so evaluation leans on held-out sets instead — which is why contamination matters so much more than it used to.',
+  'cml-leakage':
+    'Became the defining evaluation problem of the era: when training data is most of the internet, the test set is probably in it.',
+  'cml-bias':
+    'Unchanged in substance and larger in reach. Alignment work is this problem with a bigger model and more people affected by the answer.',
+}
