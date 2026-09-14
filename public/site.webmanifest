@@ -1,7 +1,7 @@
 {
   "name": "AI Atlas",
   "short_name": "AI Atlas",
-  "description": "Learn the whole field by zooming into it — six maps, 353 topics, worked examples and playgrounds.",
+  "description": "Six zoomable maps from the maths up to the frontier: 353 topics, 488 worked examples with every number editable, and 26 playgrounds.",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
