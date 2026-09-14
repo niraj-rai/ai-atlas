@@ -523,6 +523,13 @@ workflow sets `VITE_BASE` from the repository name and `vite.config.ts` reads
 it, defaulting to `/` for local builds. Taking it from the repository name means
 renaming the repo cannot silently break the asset URLs.
 
+The icon links carry a `?v=` query, because browsers cache favicons past their
+headers — a redrawn icon can otherwise sit stale for weeks. The value is a hash
+of the icon bytes, computed by a small plugin in `vite.config.ts`, so it changes
+when an icon changes and not otherwise. The plugin runs `enforce: 'pre'`: Vite
+will not rewrite an href whose query still holds an unresolved placeholder, and
+running it afterwards left the icons pointing at the domain root.
+
 Shared links carry an Open Graph card (`public/og.png`, 1200×630). `og:url` and
 `og:image` have to be absolute — a scraper will not resolve a relative path — so
 they are built from `VITE_SITE` in `.env`. Change that one line and the tags

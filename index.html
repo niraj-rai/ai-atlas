@@ -5,12 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <!-- SVG first for browsers that take it, a PNG for those that do not. Paths
-         are root-relative so Vite rewrites them for a subpath deploy. -->
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+         are root-relative so Vite rewrites them for a subpath deploy, and the
+         ?v= is a hash of the icon bytes: browsers cache favicons past their
+         headers, and without it a redrawn icon can sit stale for weeks. -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=%ICON_V%" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=%ICON_V%" />
     <!-- iOS and iPadOS ignore the manifest icons for the home screen. -->
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=%ICON_V%" />
+    <link rel="manifest" href="/site.webmanifest?v=%ICON_V%" />
     <meta name="theme-color" content="#0f1524" />
     <meta name="apple-mobile-web-app-title" content="AI Atlas" />
 
