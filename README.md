@@ -597,10 +597,21 @@ instead: at 44px each, a two-row breadcrumb trail pushes the header past 160px
 and eats the map. The rules key on `pointer: coarse`, so a narrow *desktop*
 window keeps its compact controls.
 
-### While the graph loads
+### While things load
 
-The graph view is a lazy chunk of about 140KB, mostly React Flow, so
-`GraphSkeleton` draws the shape it is about to take — a root, connectors, a
+Two skeletons, for two different waits.
+
+The **boot skeleton** lives in `index.html`, so it paints with the document
+rather than waiting on anything. The main bundle is about 550KB over the wire —
+roughly 2.7s on slow 4G and 6s on 3G — and without it the page is blank white
+for all of that. A small inline script picks the theme and the view before
+anything paints, so the skeleton matches what is about to render instead of
+flashing the wrong ground or the wrong shape. It duplicates the rules in
+`src/lib/theme.ts` and the view default in `App.tsx`; change them together.
+
+The **graph skeleton** covers the second wait. The graph view is a lazy chunk of
+about 140KB, mostly React Flow, so `GraphSkeleton` draws the shape it is about
+to take — a root, connectors, a
 column of children — rather than the word "loading". The layout does not jump
 when the real thing arrives. It pulses, and holds still under
 `prefers-reduced-motion`: a pulse behind content someone is waiting on is

@@ -33,9 +33,123 @@
     <meta name="twitter:image" content="%VITE_SITE%/og.png" />
     <meta name="description" content="Six zoomable maps from the maths up to the frontier: 353 topics, 488 worked examples with every number editable, and 26 playgrounds." />
     <title>AI Atlas — the journey from symbolic AI to AGI</title>
+
+    <!--
+      The boot skeleton below is styled here rather than in the stylesheet, so it
+      paints with the document instead of waiting on anything. The main bundle is
+      about 550KB over the wire — a couple of seconds on slow 4G, longer on 3G —
+      and without this the page is blank white for all of it.
+    -->
+    <style>
+      .boot { position: fixed; inset: 0; display: flex; flex-direction: column; }
+      .boot-bar {
+        flex: 0 0 52px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0 18px;
+        border-bottom: 1px solid var(--line, #1d2433);
+        background: var(--bg-panel, #0c1120);
+      }
+      .boot-mark { width: 18px; height: 18px; border-radius: 4px; background: #a78bfa; }
+      .boot-name { font: 600 13px/1 system-ui, sans-serif; color: var(--text, #e6ebf5); letter-spacing: -0.01em; }
+      .boot-body { flex: 1 1 auto; display: flex; min-height: 0; }
+      .boot-map { flex: 1 1 auto; display: grid; gap: 8px; padding: 14px;
+        grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
+      /* The graph shape: a root and the column it fans out to. */
+      .boot-graph { flex: 1 1 auto; display: none; align-items: center; gap: 46px; padding: 28px 34px; }
+      .boot-graph .col { display: flex; flex-direction: column; gap: 14px; flex: 0 0 190px; }
+      .boot-graph .card { height: 74px; border-radius: 9px; background: var(--surface-2, #161d2e);
+        animation: boot-pulse 1.5s ease-in-out infinite; }
+      .boot-graph .root { flex: 0 0 190px; height: 92px; }
+      /* Whichever view is about to render is the one the skeleton draws. */
+      :root[data-view='graph'] .boot-map { display: none }
+      :root[data-view='graph'] .boot-graph { display: flex }
+      .boot-panel { flex: 0 0 390px; border-left: 1px solid var(--line, #1d2433);
+        background: var(--bg-panel, #0c1120); padding: 22px 24px; display: flex;
+        flex-direction: column; gap: 12px; }
+      .boot-tile, .boot-line {
+        border-radius: 8px;
+        background: var(--surface-2, #161d2e);
+        animation: boot-pulse 1.5s ease-in-out infinite;
+      }
+      .boot-line { height: 12px; border-radius: 4px; }
+      .boot-line.w1 { width: 60%; height: 22px; }
+      .boot-line.w2 { width: 85%; }
+      .boot-line.w3 { width: 72%; }
+      .boot-tile:nth-child(2) { animation-delay: 90ms }
+      .boot-tile:nth-child(3) { animation-delay: 180ms }
+      .boot-tile:nth-child(4) { animation-delay: 270ms }
+      .boot-tile:nth-child(5) { animation-delay: 360ms }
+      .boot-tile:nth-child(6) { animation-delay: 450ms }
+      .boot-graph .col .card:nth-child(2) { animation-delay: 110ms }
+      .boot-graph .col .card:nth-child(3) { animation-delay: 220ms }
+      .boot-graph .col .card:nth-child(4) { animation-delay: 330ms }
+      @keyframes boot-pulse { 0%, 100% { opacity: 0.4 } 50% { opacity: 0.85 } }
+      @media (prefers-reduced-motion: reduce) {
+        .boot-tile, .boot-line, .boot-graph .card { animation: none; opacity: 0.6 }
+      }
+      @media (max-width: 860px) {
+        .boot-body { flex-direction: column }
+        .boot-panel { flex: 1 1 auto; border-left: 0; border-top: 1px solid var(--line, #1d2433) }
+        .boot-map, .boot-graph { flex: 0 0 46vh }
+        .boot-graph { gap: 22px; padding: 18px }
+      }
+    </style>
+
+    <!--
+      Pick the theme before anything paints, or a reader who prefers light gets a
+      flash of the dark ground. Deliberately the same rule as src/lib/theme.ts —
+      an explicit choice wins, otherwise the device, and anything undetectable
+      means light. Change the two together.
+    -->
+    <script>
+      try {
+        var saved = localStorage.getItem('il.theme')
+        document.documentElement.dataset.theme =
+          saved === 'light' || saved === 'dark'
+            ? saved
+            : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+      } catch (e) {
+        /* blocked storage: React will settle the theme a moment later */
+      }
+
+      /*
+       * And which view is about to render, so the skeleton draws that shape
+       * rather than the other one. Same key and same default as App.tsx, which
+       * opens on the graph unless told otherwise.
+       */
+      try {
+        document.documentElement.dataset.view =
+          localStorage.getItem('il.view') === 'cards' ? 'cards' : 'graph'
+      } catch (e) {
+        document.documentElement.dataset.view = 'graph'
+      }
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <!-- Replaced the moment React mounts into #root. -->
+    <div id="root">
+      <div class="boot" role="status" aria-label="Loading the atlas">
+        <div class="boot-bar"><span class="boot-mark"></span><span class="boot-name">AI Atlas</span></div>
+        <div class="boot-body">
+          <div class="boot-map">
+            <i class="boot-tile"></i><i class="boot-tile"></i><i class="boot-tile"></i>
+            <i class="boot-tile"></i><i class="boot-tile"></i><i class="boot-tile"></i>
+          </div>
+          <div class="boot-graph">
+            <div class="col root"><i class="card"></i></div>
+            <div class="col">
+              <i class="card"></i><i class="card"></i><i class="card"></i><i class="card"></i>
+            </div>
+          </div>
+          <div class="boot-panel">
+            <i class="boot-line w1"></i><i class="boot-line w2"></i>
+            <i class="boot-line w3"></i><i class="boot-line w2"></i>
+          </div>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
