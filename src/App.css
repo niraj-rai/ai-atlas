@@ -460,11 +460,16 @@
    rather than wrapping one button at a time. */
 .tools { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
 
-/* Every topic on this map, in the platform's own picker. */
-.topic-select {
-  flex: 0 1 auto;
-  max-width: 190px;
-  padding: 5px 8px;
+/* ───────────────────────────── topic picker: trigger, popover, listbox */
+.ts { position: relative; flex: 0 1 auto; }
+
+.ts-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 190px;
+  padding: 5px 9px;
   border: 1px solid var(--line);
   border-radius: 7px;
   background: var(--bg-panel);
@@ -472,9 +477,140 @@
   font: inherit;
   font-size: 11.5px;
   cursor: pointer;
+  transition: border-color 130ms, color 130ms;
 }
-.topic-select:hover { border-color: var(--line-2); color: var(--text); }
-.topic-select:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 1px; }
+.ts-trigger:hover { border-color: var(--line-2); color: var(--text); }
+.ts-trigger.open { border-color: var(--accent-ink); color: var(--text); }
+.ts-trigger:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 1px; }
+.ts-current { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ts-trigger svg { flex: 0 0 auto; opacity: 0.7; }
+
+.ts-pop {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 330px;
+  max-width: min(330px, calc(100vw - 24px));
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg-panel);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.34);
+  overflow: hidden;
+}
+
+.ts-field {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 11px;
+  border-bottom: 1px solid var(--line);
+  color: var(--dim);
+}
+.ts-field input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--text);
+}
+.ts-field input:focus { outline: none; }
+.ts-field input::placeholder { color: var(--dim); }
+.ts-clear {
+  flex: 0 0 auto;
+  width: 20px; height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--dim);
+  cursor: pointer;
+}
+.ts-clear:hover { background: var(--surface-2); color: var(--text); }
+
+.ts-list {
+  max-height: min(52vh, 380px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 5px;
+}
+
+.ts-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  color: var(--muted);
+  cursor: pointer;
+}
+/* Cursor rather than hover: the keyboard and the mouse share one highlight. */
+.ts-row.on { background: var(--surface-2); color: var(--text); }
+.ts-row.here { color: var(--accent-ink); }
+.ts-row.here svg:last-child { margin-left: auto; flex: 0 0 auto; opacity: 0.9; }
+
+.ts-branch {
+  flex: 0 0 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dim);
+  opacity: 0.75;
+}
+/* A leaf gets a tick of the branch line, so depth is legible without a chevron. */
+.ts-leaf {
+  width: 5px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.55;
+}
+.ts-label { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.ts-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ts-label mark {
+  padding: 0 1px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+  color: inherit;
+}
+.ts-path {
+  font-size: 10px;
+  font-style: normal;
+  color: var(--dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ts-empty { margin: 0; padding: 16px 12px; font-size: 12px; color: var(--dim); text-align: center; }
+
+.ts-foot {
+  padding: 7px 11px;
+  border-top: 1px solid var(--line);
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  color: var(--dim);
+}
+.ts-foot kbd {
+  margin-right: 2px;
+  padding: 0 3px;
+  border: 1px solid var(--line-2);
+  border-radius: 3px;
+  background: var(--surface-2);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 9.5px;
+}
 
 /* Folded away, the panel gets the whole stage — at every width, or folding the
    map on a desktop would just leave a wide empty gap beside it. */
@@ -1624,7 +1760,8 @@ nav.crumbs svg.crumb-sep { opacity: 0.5; margin: 0 2px; }
      labels, but everything else still fits across. */
   .crumbs { order: 4; flex-basis: 100%; font-size: 11.5px; }
   .brand { font-size: 12px; order: 1; flex: 0 0 auto; }
-  .topic-select { order: 3; max-width: 200px; }
+  .ts { order: 3; }
+  .ts-trigger { width: 200px; }
   .tour { order: 2; }
   .tools { order: 5; margin-left: auto; }
   .tools .icon-btn span,
@@ -2197,7 +2334,14 @@ nav.crumbs svg.crumb-sep { opacity: 0.5; margin: 0 2px; }
      steps out of a topic or a whole map — so the trail is the row to give up
      when the header is competing with the map for a small screen. */
   .crumbs { display: none; }
-  .topic-select { order: 3; flex: 1 1 100%; max-width: none; }
+  .ts { order: 3; flex: 1 1 100%; }
+  .ts-trigger { width: 100%; }
+  /* Full width under the header, and tall enough to be worth opening. */
+  .ts-pop { width: 100%; max-width: none; }
+  /* Rows are tapped, so they take the same 44px as everything else. */
+  .ts-row { min-height: 44px; }
+  /* iOS zooms the whole page when a focused input is under 16px. */
+  .ts-field input { font-size: 16px; }
   .tour { order: 2; margin-left: auto; }
   .tools {
     order: 5;
