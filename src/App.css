@@ -2108,11 +2108,9 @@ nav.crumbs svg.crumb-sep { opacity: 0.5; margin: 0 2px; }
   .icon-btn, .mode { padding-inline: 7px; }
 }
 
+/* Space, not input: the legend becomes a sheet because the map is only 46vh
+   here, whoever is pointing at it. */
 @media (max-width: 860px) {
-  /* The shortcuts panel goes: there is no keyboard to press it on. The legend
-     stays — what the markings mean matters more on a small screen, not less —
-     but the map is only 46vh here, so it becomes a sheet that scrolls. */
-  .graph-keys { display: none; }
   .graph-legend {
     left: 8px;
     right: 8px;
@@ -2122,7 +2120,14 @@ nav.crumbs svg.crumb-sep { opacity: 0.5; margin: 0 2px; }
     overflow-y: auto;
     overscroll-behavior: contain;
   }
-  /* Nothing to press it with, so the hint reads as a plain word. */
+}
+
+/* Input, not space — so this keys on the pointer, exactly as the touch target
+   sizes do. A laptop with a narrow window still has a keyboard: it should keep
+   its shortcuts panel and still be told to click rather than tap. */
+@media (max-width: 860px) and (pointer: coarse), (max-width: 560px) {
+  /* Nothing to press the shortcuts with. */
+  .graph-keys { display: none; }
   .hint-btn kbd { display: none; }
   .hint-desk { display: none; }
   .hint-touch { display: inline; }
