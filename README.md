@@ -525,8 +525,17 @@ renaming the repo cannot silently break the asset URLs.
 Three ways, and they answer different questions. The **breadcrumb** says where
 you are. The **search palette** (<kbd>/</kbd>) answers *where is the thing I can
 name*. The **topic dropdown** in the header answers *what is on this map* — every
-node of the current world, indented to show the tree. It is a native `<select>`
-on purpose: on a phone that hands you the operating system's own picker.
+node of the current world, with a filter field, the tree drawn as indents and
+branch arrows, and full keyboard navigation.
+
+It is a hand-built combobox (`src/components/TopicSelect.tsx`) rather than a
+native `<select>`, which could not show the tree, could not be searched by more
+than a first letter, and could not be styled — and rather than shadcn/ui, which
+would mean adding Tailwind and Radix to a project whose CSS is written by hand.
+The pattern is shadcn's; the tokens are the app's own. Giving up the native
+control costs the OS picker on a phone, so the popover takes the full width
+there, with 44px rows and a 16px filter field — below 16px, iOS zooms the whole
+page when the field takes focus.
 
 **Hide map** folds the canvas away so the panel has the whole screen, which is
 what you want once you are reading rather than navigating. The choice is
