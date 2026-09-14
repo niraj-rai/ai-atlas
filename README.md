@@ -490,10 +490,15 @@ some tile at it.
 
 ### The mark
 
-`public/favicon.svg` is the app's own root canvas in miniature — a treemap of
-the eras in the six accent colours the AI map actually uses — and
-`src/components/BrandMark.tsx` draws the same shapes inline for the header. They
-are one drawing in two places and should change together.
+`public/favicon.svg` is an atlas and a network in one mark — a globe of
+meridians with nodes wired across it — and `src/components/BrandMark.tsx` draws
+the same shapes inline for the header. They are one drawing in two places and
+should change together.
+
+The PNGs are rendered from that SVG with headless Chrome rather than
+ImageMagick: without `librsvg` installed, ImageMagick falls back to its own SVG
+renderer, which silently drops the strokes and leaves you with three coloured
+dots and no globe.
 
 Around it: a 180px `apple-touch-icon.png`, because iOS ignores the manifest's
 icons for the home screen; 192 and 512 PNGs plus a full-bleed maskable variant

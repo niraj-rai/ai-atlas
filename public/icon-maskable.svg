@@ -1,14 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="AI Atlas">
-  <!--
-    Android adaptive icons crop to a circle inscribed in the middle ~80%, so the
-    same mark is drawn smaller inside a full-bleed ground.
-  -->
+  <!-- Android crops adaptive icons to a circle inside the middle 80%. -->
   <rect width="64" height="64" fill="#0f1524"/>
-  <g transform="translate(32 32) scale(0.62) translate(-32 -32)">
-    <rect x="8"  y="8"  width="27" height="27" rx="4" fill="#a78bfa"/>
-    <rect x="38" y="8"  width="18" height="27" rx="4" fill="#22d3ee"/>
-    <rect x="8"  y="38" width="18" height="18" rx="4" fill="#fb923c"/>
-    <rect x="29" y="38" width="12" height="18" rx="3.5" fill="#4ade80"/>
-    <rect x="44" y="38" width="12" height="18" rx="3.5" fill="#f472b6"/>
+  <g transform="translate(32 32) scale(0.66) translate(-32 -32)">
+<g fill="none" stroke="#7c8798" stroke-width="2.4" stroke-linecap="round">
+    <circle cx="32" cy="32" r="20"/>
+    <ellipse cx="32" cy="32" rx="8.6" ry="20"/>
+    <path d="M13.2 25.2h37.6M13.2 38.8h37.6"/>
+  </g>
+  <g stroke="#cfe0ff" stroke-width="2.6" stroke-linecap="round" opacity="0.95">
+    <path d="M23 21.5 43.5 27M23 21.5 30 43M43.5 27 30 43"/>
+  </g>
+  <g stroke="none">
+    <circle cx="23" cy="21.5" r="5.2" fill="#a78bfa"/>
+    <circle cx="43.5" cy="27" r="4.6" fill="#22d3ee"/>
+    <circle cx="30" cy="43" r="4.6" fill="#4ade80"/>
+  </g>
   </g>
 </svg>
