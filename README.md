@@ -1,7 +1,7 @@
 # AI Atlas
 
-[![Open the atlas](https://img.shields.io/badge/Open_the_atlas-niraj--rai.github.io-2563eb?style=for-the-badge)](https://niraj-rai.github.io/interactive-learning/)
-[![Deploy](https://github.com/niraj-rai/interactive-learning/actions/workflows/deploy.yml/badge.svg)](https://github.com/niraj-rai/interactive-learning/actions/workflows/deploy.yml)
+[![Open the atlas](https://img.shields.io/badge/Open_the_atlas-niraj--rai.github.io-2563eb?style=for-the-badge)](https://niraj-rai.github.io/ai-atlas/)
+[![Deploy](https://github.com/niraj-rai/ai-atlas/actions/workflows/deploy.yml/badge.svg)](https://github.com/niraj-rai/ai-atlas/actions/workflows/deploy.yml)
 
 Learn the whole field by zooming into it. Every topic is a map: you start at the
 globe view, click a region, and the viewport flies into it revealing the
@@ -511,7 +511,7 @@ for Android, whose adaptive icons crop to a circle inside the middle 80%; a
 
 ### Deploying
 
-Live at **https://niraj-rai.github.io/interactive-learning/**, published by
+Live at **https://niraj-rai.github.io/ai-atlas/**, published by
 `.github/workflows/deploy.yml` on every push to `main`. Lint and the
 type-checked build run first, so a broken commit does not ship.
 
