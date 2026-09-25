@@ -8,8 +8,13 @@ import { ZoomMap } from './components/ZoomMap'
 const GraphView = lazy(() =>
   import('./components/GraphView').then((m) => ({ default: m.GraphView })),
 )
-// The globe pulls in d3-geo and is the view a reader is least often on, so it
-// waits until it is asked for, like the graph.
+/*
+ * Lazy even though it opens the atlas. Its code is entirely its own — d3-geo is
+ * used nowhere else — so bundling it eagerly puts 11.6KB gzipped in front of
+ * every reader, including the ones who prefer the cards, and it has to parse
+ * before anything renders. Left lazy it is a 12.7KB request that arrives while
+ * the skeleton is already on screen. Measured both ways before choosing.
+ */
 const GlobeView = lazy(() =>
   import('./components/GlobeView').then((m) => ({ default: m.GlobeView })),
 )
@@ -82,12 +87,15 @@ export default function App() {
    */
   const [themePref, setThemePref] = useState<ThemePref>(initialPref)
   const [theme, setTheme] = useState<Theme>(() => resolveTheme(initialPref()))
+  /* The globe opens the atlas: it is the only view that shows the map's own
+     order at a glance. Change this and the inline script in index.html, which
+     has to pick the same shape before React exists. */
   const [view, setView] = useState<View>(() => {
     try {
       const saved = localStorage.getItem(VIEW_KEY)
-      return VIEWS.includes(saved as View) ? (saved as View) : 'graph'
+      return VIEWS.includes(saved as View) ? (saved as View) : 'globe'
     } catch {
-      return 'graph'
+      return 'globe'
     }
   })
   const [simple, setSimple] = useState(() => {

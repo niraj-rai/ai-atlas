@@ -44,7 +44,7 @@ tile you're inside to step back out, `Esc` to go up a level.
 
 **Three views of the same atlas**, cycled from the toolbar and remembered:
 
-- **Graph** (the default) — the tree as a left-to-right node graph, built on
+- **Graph** — the tree as a left-to-right node graph, built on
   React Flow. Starts at the root and unfolds: click a node to open its children,
   click again to fold it back. Each node carries its icon, title, tagline, **who
   introduced the idea and when**, and its **key point** — so the graph is
@@ -61,7 +61,8 @@ tile you're inside to step back out, `Esc` to go up a level.
   weight, with key points and formulas appearing as you zoom in. It centres and
   closes in on the selection by construction — that *is* the zoom — so it needs
   no auto-centre toggle of its own.
-- **Globe** — the atlas as a sphere, which is where the metaphor started.
+- **Globe** (the default) — the atlas as a sphere, which is where the metaphor
+  started.
   Latitude carries the map's own order: the root sits at the south pole, the
   first region rides a ring just north of it, and each region after it sits
   further north again — so on the AI globe, reading south to north is reading
@@ -651,13 +652,18 @@ anything paints, so the skeleton matches what is about to render instead of
 flashing the wrong ground or the wrong shape. It duplicates the rules in
 `src/lib/theme.ts` and the view default in `App.tsx`; change them together.
 
-The **graph skeleton** covers the second wait. The graph view is a lazy chunk of
-about 140KB, mostly React Flow, so `GraphSkeleton` draws the shape it is about
-to take — a root, connectors, a
-column of children — rather than the word "loading". The layout does not jump
-when the real thing arrives. It pulses, and holds still under
-`prefers-reduced-motion`: a pulse behind content someone is waiting on is
-exactly what that setting is for.
+The **view skeletons** cover the second wait. Both the graph and the globe are
+lazy chunks — 140KB of mostly React Flow, and 35KB of mostly d3-geo — so
+`GraphSkeleton` draws a root, connectors and a column of children, and
+`GlobeSkeleton` draws a sphere with its grid and a few dots riding a ring,
+rather than the word "loading". The layout does not jump when the real thing
+arrives. They pulse, and hold still under `prefers-reduced-motion`: a pulse
+behind content someone is waiting on is exactly what that setting is for.
+
+The globe stays lazy even though it is the default, because its code is used
+nowhere else: eager, it adds 11.6KB gzipped to a bundle every reader must parse
+before anything renders; lazy, it is a 12.7KB request that arrives while the
+skeleton is already painted. Both were built and measured rather than guessed.
 
 ### Reading a map card
 

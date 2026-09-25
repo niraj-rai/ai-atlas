@@ -54,7 +54,7 @@
       .boot-mark { width: 18px; height: 18px; border-radius: 4px; background: #a78bfa; }
       .boot-name { font: 600 13px/1 system-ui, sans-serif; color: var(--text, #e6ebf5); letter-spacing: -0.01em; }
       .boot-body { flex: 1 1 auto; display: flex; min-height: 0; }
-      .boot-map { flex: 1 1 auto; display: grid; gap: 8px; padding: 14px;
+      .boot-map { flex: 1 1 auto; display: none; gap: 8px; padding: 14px;
         grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
       /* The graph shape: a root and the column it fans out to. */
       .boot-graph { flex: 1 1 auto; display: none; align-items: center; gap: 46px; padding: 28px 34px; }
@@ -63,13 +63,15 @@
         animation: boot-pulse 1.5s ease-in-out infinite; }
       .boot-graph .root { flex: 0 0 190px; height: 92px; }
       /* Whichever view is about to render is the one the skeleton draws. */
-      .boot-globe { flex: 1 1 auto; display: none; align-items: center; justify-content: center; }
+      .boot-globe { flex: 1 1 auto; display: flex; align-items: center; justify-content: center; }
       .boot-globe i { display: block; width: min(46vh, 300px); aspect-ratio: 1; border-radius: 50%;
         background: var(--surface-2, #161d2e); animation: boot-pulse 1.5s ease-in-out infinite; }
-      :root[data-view='graph'] .boot-map { display: none }
+      /* The globe is the default, so it is what the bare markup draws; the
+         other two take over when the script says so. */
+      :root[data-view='cards'] .boot-globe { display: none }
+      :root[data-view='cards'] .boot-map { display: grid }
+      :root[data-view='graph'] .boot-globe { display: none }
       :root[data-view='graph'] .boot-graph { display: flex }
-      :root[data-view='globe'] .boot-map { display: none }
-      :root[data-view='globe'] .boot-globe { display: flex }
       .boot-panel { flex: 0 0 390px; border-left: 1px solid var(--line, #1d2433);
         background: var(--bg-panel, #0c1120); padding: 22px 24px; display: flex;
         flex-direction: column; gap: 12px; }
@@ -121,15 +123,15 @@
 
       /*
        * And which view is about to render, so the skeleton draws that shape
-       * rather than the other one. Same key and same default as App.tsx, which
-       * opens on the graph unless told otherwise.
+       * rather than another one. Same key and same default as App.tsx, which
+       * opens on the globe unless told otherwise.
        */
       try {
         var v = localStorage.getItem('il.view')
         document.documentElement.dataset.view =
-          v === 'cards' || v === 'globe' ? v : 'graph'
+          v === 'cards' || v === 'graph' ? v : 'globe'
       } catch (e) {
-        document.documentElement.dataset.view = 'graph'
+        document.documentElement.dataset.view = 'globe'
       }
     </script>
   </head>
