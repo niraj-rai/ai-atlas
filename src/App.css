@@ -2912,10 +2912,13 @@ nav.crumbs svg.crumb-sep { opacity: 0.5; margin: 0 2px; }
   stroke-dasharray: 3 3;
   opacity: 0.8;
 }
+/* Labels are their own layer, not children of the dots, so these key on the
+   label itself. The sizes here are duplicated in GlobeView's placement pass,
+   which measures the text to decide where it fits — change the two together. */
 .gl-label {
-  fill: var(--text);
+  fill: var(--muted);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
   pointer-events: none;
   /* A stroke behind the fill keeps a label legible where it crosses a ring. */
   paint-order: stroke;
@@ -2923,8 +2926,7 @@ nav.crumbs svg.crumb-sep { opacity: 0.5; margin: 0 2px; }
   stroke-width: 3px;
   stroke-linejoin: round;
 }
-.gl-node:not(.on) .gl-label { fill: var(--muted); font-weight: 500; }
-.gl-node.on .gl-label { font-size: 12.5px; }
+.gl-label.on { fill: var(--text); font-weight: 600; font-size: 12.5px; }
 .gl-node:hover .gl-dot { stroke: currentColor; }
 
 /* ── while the chunk loads */
@@ -2967,5 +2969,5 @@ nav.crumbs svg.crumb-sep { opacity: 0.5; margin: 0 2px; }
 /* A small globe — narrow screen or short canvas — brings its labels down with
    it; at full size they collide with the dots on the band above. */
 .globe.compact .gl-label { font-size: 9.5px; stroke-width: 2.5px; }
-.globe.compact .gl-node.on .gl-label { font-size: 10.5px; }
+.globe.compact .gl-label.on { font-size: 10.5px; }
 .globe.compact .gl-axis text { font-size: 8.5px; }

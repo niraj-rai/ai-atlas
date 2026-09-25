@@ -149,6 +149,16 @@ export function fitLabel(text: string, px: number, font: number, weight = 600): 
   return lo < 3 ? '' : text.slice(0, lo).trimEnd() + '…'
 }
 
+/**
+ * How wide a string renders, in pixels. Shares the measurement cache with the
+ * tile labels, so the globe can lay out around real text rather than an
+ * estimate — and re-measure on every rotation frame without it costing
+ * anything after the first.
+ */
+export function textWidth(text: string, font: number, weight = 600): number {
+  return measure(text, font, weight)
+}
+
 /** Does the whole label fit untruncated? Decides whether an icon earns its space. */
 export function labelFits(text: string, px: number, font: number, weight = 600): boolean {
   return measure(text, font, weight) <= px - 12

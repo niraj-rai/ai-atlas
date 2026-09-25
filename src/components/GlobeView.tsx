@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as d3 from 'd3'
 import type { Placed } from '../lib/layout'
-import { accentOf } from '../lib/layout'
+import { accentOf, textWidth } from '../lib/layout'
 import { useSize } from '../lib/useSize'
 import { Icon } from './Icon'
 import type { WorldId } from '../content/types'
@@ -110,6 +110,127 @@ function placeOnGlobe(root: Placed): Map<string, Spot> {
 
 const EASE = d3.easeCubicOut
 const FLY_MS = 620
+
+/** A rectangle in screen space, for keeping labels off each other and off dots. */
+interface Box {
+  x0: number
+  y0: number
+  x1: number
+  y1: number
+}
+
+const overlaps = (a: Box, b: Box) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1
+
+/** How much of two boxes coincide, in square pixels. Zero when they do not. */
+function overlapArea(a: Box, b: Box): number {
+  const w = Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0)
+  const h = Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0)
+  return w > 0 && h > 0 ? w * h : 0
+}
+
+type Anchor = 'start' | 'middle' | 'end'
+interface Spot2D {
+  x: number
+  y: number
+  anchor: Anchor
+  box: Box
+}
+
+/**
+ * Where a label may sit relative to its dot: beside it either way, above,
+ * below, or out at one of the four diagonals — and each side placing may also
+ * be nudged a line up or down, which is what unpicks two markers sitting one
+ * band apart. `y` is the text baseline; `box` is what the glyphs actually
+ * cover, so the two differ by roughly a third of a line height on the
+ * horizontal placings.
+ *
+ * The preferred order differs by globe size, because the two sizes crowd
+ * differently. On a large globe the markers are spread and a centred label above
+ * reads best; on a small one every region marker rides the same meridian, so
+ * above means landing on the marker one band up, and out to the side is the only
+ * placing that works at all.
+ */
+function candidates(cx: number, cy: number, r: number, w: number, h: number, lean: boolean): Spot2D[] {
+  const gap = 5
+  // Labels are drawn with a stroke behind the fill so they stay legible over a
+  // ring, and that stroke widens what they actually cover by about a pixel and
+  // a half each side. Measuring only the glyphs leaves boxes that clear each
+  // other on paper and graze on screen.
+  const halo = 2
+
+  /** A placing whose left edge is fixed: the text runs right from `x`. */
+  const fromLeft = (x: number, mid: number): Spot2D => ({
+    x,
+    y: mid + h * 0.32,
+    anchor: 'start',
+    box: { x0: x - halo, y0: mid - h / 2 - halo, x1: x + w + halo, y1: mid + h / 2 + halo },
+  })
+  /** The mirror: the text runs left from `x`. */
+  const fromRight = (x: number, mid: number): Spot2D => ({
+    x,
+    y: mid + h * 0.32,
+    anchor: 'end',
+    box: { x0: x - w - halo, y0: mid - h / 2 - halo, x1: x + halo, y1: mid + h / 2 + halo },
+  })
+  /** Centred over the dot, at a given vertical middle. */
+  const centred = (mid: number): Spot2D => ({
+    x: cx,
+    y: mid + h * 0.32,
+    anchor: 'middle',
+    box: { x0: cx - w / 2 - halo, y0: mid - h / 2 - halo, x1: cx + w / 2 + halo, y1: mid + h / 2 + halo },
+  })
+
+  const right = cx + r + gap
+  const left = cx - r - gap
+  const up = cy - r - gap - h / 2
+  const down = cy + r + gap + h / 2
+  // A diagonal starts where the dot's corner is, not where its edge is, so it
+  // sits closer in and still reads as belonging to that marker.
+  const dx = r * 0.72 + gap
+  const dy = r * 0.72 + gap + h / 2
+
+  const sides = [
+    fromLeft(right, cy),
+    fromRight(left, cy),
+    // Same side, a line higher or lower: this is what separates two markers
+    // that the projection has pushed onto nearly the same latitude.
+    fromLeft(right, cy - h),
+    fromLeft(right, cy + h),
+    fromRight(left, cy - h),
+    fromRight(left, cy + h),
+  ]
+  const stacked = [centred(up), centred(down)]
+  // Two lines clear rather than one. A marker whose siblings share its ring has
+  // dots to the left and right for the whole width of a long title, so the only
+  // way out is to step clear of the ring altogether.
+  const far = [
+    // Two lines off to the side. These keep a label's box only one line tall,
+    // which matters on a stacked canvas where the band left free by the toolbar
+    // and the hint bar is barely two hundred pixels deep and a centred placing
+    // two lines out would fall outside it.
+    fromLeft(right, cy - h * 1.8),
+    fromLeft(right, cy + h * 1.8),
+    fromRight(left, cy - h * 1.8),
+    fromRight(left, cy + h * 1.8),
+    // Stepped clear of whatever is immediately beside the dot. Turning the
+    // globe to face a node brings the region markers off the centre meridian,
+    // and they often land exactly where the label wanted to sit.
+    fromLeft(right + 24, cy),
+    fromRight(left - 24, cy),
+    centred(cy - r - gap - h * 1.8),
+    centred(cy + r + gap + h * 1.8),
+  ]
+  const diagonals = [
+    fromLeft(cx + dx, cy - dy),
+    fromRight(cx - dx, cy - dy),
+    fromLeft(cx + dx, cy + dy),
+    fromRight(cx - dx, cy + dy),
+  ]
+
+  return lean
+    ? [...sides, ...diagonals, ...stacked, ...far]
+    : [...stacked, ...sides, ...diagonals, ...far]
+}
 
 export function GlobeView({ root, index, focusId, onFocus, onEnterWorld, theme, legend: showLegend, setLegend: setShowLegend }: Props) {
   const { ref, size } = useSize<HTMLDivElement>()
@@ -422,6 +543,132 @@ export function GlobeView({ root, index, focusId, onFocus, onEnterWorld, theme, 
     zoom > 1.9 ||
     (!lean && (node.parent?.data.id === focusId || focusPath.has(node.data.id)))
 
+  const dotRadius = (spot: Spot) => spot.r * Math.min(1 + (zoom - 1) * 0.3, 1.7)
+
+  /**
+   * Where each label actually goes.
+   *
+   * A fixed offset cannot work on a globe: turning it to face a selection
+   * compresses the bands near the limb, and a label that sat clear a moment ago
+   * lands on the marker one band up. So each label is measured, tried in four
+   * places against everything already on the canvas, and given the cleanest —
+   * which on an uncrowded globe is simply the first one tried, leaving the
+   * layout looking exactly as it did before.
+   *
+   * Recomputed every frame rather than memoised, because it depends on the
+   * rotation. That is affordable: text measurement is cached by string and
+   * size, and the collision test is a few thousand rectangle comparisons.
+   */
+  const labels = (() => {
+    const pad = 2
+    const dots: Box[] = []
+    interface Item {
+      node: Placed
+      x: number
+      y: number
+      r: number
+      size: number
+      weight: number
+      on: boolean
+    }
+    const items: Item[] = []
+
+    for (const { node, spot } of drawn) {
+      const point = at(spot)
+      if (!point) continue
+      const r = dotRadius(spot)
+      // Every visible dot is an obstacle, including the ones with no label of
+      // their own — those are exactly what labels used to end up behind.
+      dots.push({
+        x0: point[0] - r - pad,
+        y0: point[1] - r - pad,
+        x1: point[0] + r + pad,
+        y1: point[1] + r + pad,
+      })
+      if (!labelled(node)) continue
+      const on = node.data.id === focusId
+      items.push({
+        node,
+        x: point[0],
+        y: point[1],
+        r,
+        // Kept in step with the font sizes in App.css; they decide the box.
+        size: on ? (lean ? 10.5 : 12.5) : lean ? 9.5 : 11,
+        weight: on ? 600 : 500,
+        on,
+      })
+    }
+
+    // First pick goes to the label a reader is most likely to be looking for,
+    // so crowding pushes the incidental ones aside rather than the selection.
+    const rank = (item: Item) =>
+      item.on ? 0 : item.node.data.id === hoverId ? 1 : 2 + item.node.depth
+    items.sort((a, b) => {
+      const byRank = rank(a) - rank(b)
+      if (byRank) return byRank
+      const da = Math.hypot(a.x - size.w / 2, a.y - size.h / 2)
+      const db = Math.hypot(b.x - size.w / 2, b.y - size.h / 2)
+      return da - db
+    })
+
+    // The band the toolbar and the hint bar leave free, so a label never hides
+    // under either of them.
+    const safe: Box = {
+      x0: 6,
+      y0: tight ? 56 : 30,
+      x1: size.w - 6,
+      y1: size.h - (tight ? 34 : 30),
+    }
+
+    const taken: Box[] = []
+    const out: { id: string; x: number; y: number; anchor: Anchor; on: boolean; text: string }[] = []
+
+    for (const item of items) {
+      const w = textWidth(item.node.data.title, item.size, item.weight)
+      const h = item.size * 1.15
+      let best: Spot2D | null = null
+      let bestCost = Infinity
+
+      for (const option of candidates(item.x, item.y, item.r, w, h, lean)) {
+        const box = option.box
+        // Three tiers, and the order is the point. Running off the canvas hides
+        // a label under the toolbar, which is the worst outcome; sitting on
+        // another label makes both unreadable; sitting on a dot only puts a
+        // disc behind a word that is drawn over it anyway. The last is charged
+        // by area rather than by count, so when nothing is clean the placer
+        // takes the near-miss over the direct hit.
+        let cost =
+          box.x0 < safe.x0 || box.x1 > safe.x1 || box.y0 < safe.y0 || box.y1 > safe.y1 ? 100 : 0
+        for (const other of taken) if (overlaps(box, other)) cost += 50
+        for (const dot of dots) cost += overlapArea(box, dot) / 50
+        if (cost < bestCost) {
+          bestCost = cost
+          best = option
+        }
+        if (cost === 0) break
+      }
+      if (!best) continue
+
+      // Nothing fits cleanly: print it anyway if it is one of the few that must
+      // stay legible, and otherwise drop it rather than add to the pile. The
+      // tolerance is a couple of square pixels, since a corner touching a dot
+      // is not something anyone can see.
+      const mustShow = item.on || item.node.data.id === hoverId || item.node.depth <= 1
+      if (bestCost > 0.05 && !mustShow) continue
+
+      taken.push(best.box)
+      out.push({
+        id: item.node.data.id,
+        x: best.x,
+        y: best.y,
+        anchor: best.anchor,
+        on: item.on,
+        text: item.node.data.title,
+      })
+    }
+    return out
+  })()
+
   return (
     <div className={`globe${lean ? ' compact' : ''}`} ref={ref}>
       <svg
@@ -486,7 +733,7 @@ export function GlobeView({ root, index, focusId, onFocus, onEnterWorld, theme, 
             if (!p) return null
             const accent = ink(accentOf(node), theme)
             const on = node.data.id === focusId
-            const r = spot.r * Math.min(1 + (zoom - 1) * 0.3, 1.7)
+            const r = dotRadius(spot)
             return (
               <g
                 key={node.data.id}
@@ -505,22 +752,26 @@ export function GlobeView({ root, index, focusId, onFocus, onEnterWorld, theme, 
                 {on && <circle className="gl-halo" r={r + 7} />}
                 <circle className="gl-dot" r={r} />
                 {node.data.world && <circle className="gl-door-ring" r={r + 3.5} />}
-                {labelled(node) && (
-                  /* Every region marker rides the same meridian, so on a small
-                     globe a label centred above one lands on the marker above
-                     it. There the labels run out to the right instead. */
-                  <text
-                    className="gl-label"
-                    x={lean ? r + 5 : 0}
-                    y={lean ? 3.5 : -r - 6}
-                    textAnchor={lean ? 'start' : 'middle'}
-                  >
-                    {node.data.title}
-                  </text>
-                )}
               </g>
             )
           })}
+        </g>
+
+        {/* Labels sit outside the dots rather than inside each one, so the pass
+            above can place them in screen space and they paint over every
+            marker instead of only over their own. */}
+        <g className="gl-labels">
+          {labels.map((label) => (
+            <text
+              key={label.id}
+              className={`gl-label${label.on ? ' on' : ''}`}
+              x={label.x}
+              y={label.y}
+              textAnchor={label.anchor}
+            >
+              {label.text}
+            </text>
+          ))}
         </g>
 
         {/*
