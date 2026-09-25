@@ -670,20 +670,20 @@ export function GlobeView({ root, index, focusId, onFocus, onEnterWorld, theme, 
       /*
        * Nothing fits cleanly, so decide what to do about it.
        *
-       * A region name is worth printing over a dot, or a pixel into the label
-       * next to it — the first is a disc behind a word drawn on top of it, and
-       * the second nobody can see. It is not worth printing two pixels into its
-       * neighbour, because then there are two names and neither can be read. On
-       * the smallest canvas the agentic map genuinely has more region names
-       * than the width holds, and this is where one of them gives way; its
-       * marker stays, and the panel still names it.
+       * Region names, the selection and whatever is under the pointer always
+       * print, however crowded it gets. On the smallest canvas the agentic map
+       * genuinely has more region names than the width holds, so on a tilted
+       * globe some of them will cross each other — that is the accepted cost of
+       * never having to wonder which band you are looking at. The scoring above
+       * still does its work: it picks the least-bad position, so where an
+       * overlap is unavoidable it is the shallowest one available.
        *
-       * The selection is the exception and always prints: a reader who has just
-       * chosen something should never have to wonder what they chose.
+       * Everything else gives way. A label deeper in the tree is incidental —
+       * its dot is still there and the panel still names it — so it is dropped
+       * rather than added to the pile.
        */
       const mustShow = item.on || item.node.data.id === hoverId || item.node.depth <= 1
-      if (!item.on && bestBite > 2) continue
-      if (bestCost > 0.05 && !mustShow) continue
+      if (!mustShow && (bestBite > 2 || bestCost > 0.05)) continue
 
       taken.push(best.box)
       out.push({
