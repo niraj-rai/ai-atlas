@@ -2113,6 +2113,13 @@ nav.crumbs svg.crumb-sep { opacity: 0.5; margin: 0 2px; }
   .mode,
   .view-toggle,
   .tour button { min-height: 40px; min-width: 40px; }
+  /* The topic picker is the main way round the atlas on a phone, and it was
+     the one topbar control left at its desktop height. Same 40px as the rest
+     of the row; its own width rule still makes it full-bleed below 560px. */
+  .ts-trigger { min-height: 40px; }
+  /* Clearing the filter is a 20px target otherwise — under the WCAG minimum,
+     and sitting right beside the text you are trying to keep. */
+  .ts-clear { min-width: 32px; min-height: 32px; }
   /* Icon-only controls need the width as well, or the target is a tall slot. */
   .graph-tools button { min-width: 44px; }
   /* React Flow's own zoom controls ship at 26px — fine for a mouse, mean for a
