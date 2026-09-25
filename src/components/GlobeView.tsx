@@ -119,13 +119,24 @@ interface Box {
   y1: number
 }
 
-const overlaps = (a: Box, b: Box) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1
-
 /** How much of two boxes coincide, in square pixels. Zero when they do not. */
 function overlapArea(a: Box, b: Box): number {
   const w = Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0)
   const h = Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0)
   return w > 0 && h > 0 ? w * h : 0
+}
+
+/**
+ * How far two boxes actually bite into each other — the shorter side of the
+ * intersection. Two labels on adjacent bands routinely share a pixel of their
+ * bounding boxes without a reader ever seeing it; one sitting nine pixels into
+ * its neighbour is unreadable. Area alone does not separate those, because a
+ * wide shallow graze and a narrow deep hit can measure the same.
+ */
+function overlapDepth(a: Box, b: Box): number {
+  const w = Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0)
+  const h = Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0)
+  return w > 0 && h > 0 ? Math.min(w, h) : 0
 }
 
 type Anchor = 'start' | 'middle' | 'end'
@@ -629,31 +640,49 @@ export function GlobeView({ root, index, focusId, onFocus, onEnterWorld, theme, 
       let best: Spot2D | null = null
       let bestCost = Infinity
 
+      let bestBite = 0
+
       for (const option of candidates(item.x, item.y, item.r, w, h, lean)) {
         const box = option.box
         // Three tiers, and the order is the point. Running off the canvas hides
         // a label under the toolbar, which is the worst outcome; sitting on
         // another label makes both unreadable; sitting on a dot only puts a
-        // disc behind a word that is drawn over it anyway. The last is charged
-        // by area rather than by count, so when nothing is clean the placer
-        // takes the near-miss over the direct hit.
+        // disc behind a word that is drawn over it anyway. The last two are
+        // charged by area rather than counted, so when nothing is clean the
+        // placer takes the near-miss over the direct hit.
         let cost =
-          box.x0 < safe.x0 || box.x1 > safe.x1 || box.y0 < safe.y0 || box.y1 > safe.y1 ? 100 : 0
-        for (const other of taken) if (overlaps(box, other)) cost += 50
-        for (const dot of dots) cost += overlapArea(box, dot) / 50
+          box.x0 < safe.x0 || box.x1 > safe.x1 || box.y0 < safe.y0 || box.y1 > safe.y1 ? 10000 : 0
+        let bite = 0
+        for (const other of taken) {
+          cost += overlapArea(box, other) * 20
+          bite = Math.max(bite, overlapDepth(box, other))
+        }
+        for (const dot of dots) cost += overlapArea(box, dot)
         if (cost < bestCost) {
           bestCost = cost
+          bestBite = bite
           best = option
         }
         if (cost === 0) break
       }
       if (!best) continue
 
-      // Nothing fits cleanly: print it anyway if it is one of the few that must
-      // stay legible, and otherwise drop it rather than add to the pile. The
-      // tolerance is a couple of square pixels, since a corner touching a dot
-      // is not something anyone can see.
+      /*
+       * Nothing fits cleanly, so decide what to do about it.
+       *
+       * A region name is worth printing over a dot, or a pixel into the label
+       * next to it — the first is a disc behind a word drawn on top of it, and
+       * the second nobody can see. It is not worth printing two pixels into its
+       * neighbour, because then there are two names and neither can be read. On
+       * the smallest canvas the agentic map genuinely has more region names
+       * than the width holds, and this is where one of them gives way; its
+       * marker stays, and the panel still names it.
+       *
+       * The selection is the exception and always prints: a reader who has just
+       * chosen something should never have to wonder what they chose.
+       */
       const mustShow = item.on || item.node.data.id === hoverId || item.node.depth <= 1
+      if (!item.on && bestBite > 2) continue
       if (bestCost > 0.05 && !mustShow) continue
 
       taken.push(best.box)
