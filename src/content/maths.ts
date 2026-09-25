@@ -853,7 +853,7 @@ export const mathsWorld: TopicNode = {
                   where: [
                     { sym: '\\mu', is: 'the mean — the balance point being measured from' },
                     { sym: '(X - \\mu)', is: 'how far one value strays, positive or negative' },
-                    { sym: '(\;)^2', is: 'squared, so strays either side count the same and far ones count much more' },
+                    { sym: '(\\;)^2', is: 'squared, so strays either side count the same and far ones count much more' },
                     { sym: '\\sigma', is: 'the standard deviation, in the original units' },
                   ],
                   how: 'Variance is in squared units — squared pounds, squared degrees — which is meaningless to report, hence the square root. Standard deviation is the one to quote; variance is the one that does the algebra.',
@@ -917,7 +917,7 @@ export const mathsWorld: TopicNode = {
                     { sym: '\\mu', is: 'the mean — where the peak sits' },
                     { sym: '\\sigma', is: 'the standard deviation — how wide the bell is' },
                     { sym: '(x-\\mu)^2', is: 'squared distance from the centre, which is why the curve is symmetric' },
-                    { sym: '\\exp(-\;)', is: 'makes the height fall away fast — quadratically fast in the exponent' },
+                    { sym: '\\exp(-\\;)', is: 'makes the height fall away fast — quadratically fast in the exponent' },
                     { sym: '\\frac{1}{\\sigma\\sqrt{2\\pi}}', is: 'the constant that makes the total area exactly 1' },
                   ],
                   how: 'Everything interesting is in the exponent: height depends only on how many standard deviations from the mean you are. That is why a z-score is enough to place any value on any normal curve, and why tables of it exist at all.',

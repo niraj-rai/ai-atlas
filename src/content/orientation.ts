@@ -4455,6 +4455,893 @@ export const ORIENTATION: Record<string, Orientation> = {
       'Deep reading reserved for the handful of papers that matter to your work',
     ],
   },
+
+  // ───────────────────────────────────────────────── agentic AI
+  agents: {
+    definition:
+      'An agent is a system that perceives its environment, chooses an action, takes it, and observes the result — repeating that loop towards a goal rather than answering once.',
+    whenToUse: [
+      'The number of steps, or their order, depends on what is discovered along the way.',
+      'The task needs to touch the outside world — search, code, files, APIs — not just produce text.',
+      'Not when you can already write the steps down: a fixed workflow is cheaper, faster and testable.',
+      'Not when a wrong action is expensive and cannot be undone, unless a person approves each one.',
+    ],
+    applications: [
+      'Coding agents that read a repository, edit files and run the test suite',
+      'Customer support systems that look up an order, issue a refund and write the record back',
+      'Research assistants that search, read, search again and cite what they used',
+      'Operations runbooks executed step by step with a human approving anything irreversible',
+    ],
+  },
+  'ag-foundations': {
+    definition:
+      'The foundations of agency: the perceive–decide–act loop, the properties of the environment that make a task hard, and the judgement of whether a loop is warranted at all.',
+    whenToUse: [
+      'Before building anything — the environment decides the difficulty more than the model does.',
+      'When an agent behaves erratically, to check whether the environment is harder than the design assumed.',
+    ],
+    applications: [
+      'Writing a PEAS specification before committing to an architecture',
+      'Deciding between a fixed pipeline and a loop for a new automation',
+    ],
+  },
+  'ag-loop': {
+    definition:
+      'The agent loop is the cycle of reading the current context, emitting one action, running it, and appending the result to the context before deciding again.',
+    whenToUse: [
+      'Whenever the next step genuinely depends on the last result.',
+      'Not for a fixed sequence — a loop over known steps is a workflow paying agent prices.',
+    ],
+    applications: [
+      'A coding agent running a test, reading the failure and editing the file that caused it',
+      'A browsing agent clicking, reading the new page and choosing where to go next',
+      'The read–eval–print cycle of any tool-using assistant',
+    ],
+  },
+  'ag-peas': {
+    definition:
+      'PEAS is a four-part specification of an agent task — Performance measure, Environment, Actuators, Sensors — written before any design decisions are made.',
+    whenToUse: [
+      'At the start of any agent project, to make the success measure explicit rather than assumed.',
+      'When two people disagree about whether an agent works: usually they hold different performance measures.',
+    ],
+    applications: [
+      'Specifying a support agent: resolution rate, a ticketing system, the API calls it may make, the ticket text it can read',
+      'Classifying an environment as partially observable, which tells you memory is mandatory rather than optional',
+    ],
+  },
+  'ag-autonomy': {
+    definition:
+      'Autonomy is how much an agent may do without asking, ranging from suggesting an action, through acting after approval, to acting freely within a defined scope.',
+    whenToUse: [
+      'Choose it per tool rather than per agent: reading and deleting do not deserve the same trust.',
+      'Raise it only where the action is reversible or cheap to get wrong.',
+    ],
+    applications: [
+      'Code review suggestions a developer accepts, versus an agent that commits directly to a branch',
+      'A finance agent that drafts a payment but never releases it',
+      'Read-only analytics agents given broad freedom because nothing they do persists',
+    ],
+  },
+  'ag-vs-workflow': {
+    definition:
+      'A workflow executes steps fixed in advance; an agent decides its own steps at runtime — so the choice between them is whether the sequence can be written down beforehand.',
+    whenToUse: [
+      'Choose a workflow when the inputs, the steps and their number are known: it is cheaper and it can be tested.',
+      'Choose an agent when the depth of the task is unknown until it is under way.',
+      'Most production systems want a workflow with one adaptive step, not a loop.',
+    ],
+    applications: [
+      'Document extraction pipelines, which are workflows even though every stage calls a model',
+      'Debugging an unfamiliar failure, which genuinely cannot be scripted in advance',
+      'Triage that routes to one of five fixed procedures — the routing is adaptive, the procedures are not',
+    ],
+  },
+  'ag-types': {
+    definition:
+      'The classical agent taxonomy ranks agent designs by what they hold internally: rules only, rules plus state, an explicit goal, a utility function over outcomes, or a mechanism that learns.',
+    whenToUse: [
+      'To say precisely what an agent is, and so predict how it will fail.',
+      'When choosing a design: pick the simplest rung that can express the task.',
+    ],
+    applications: [
+      'Recognising that a "smart" automation is a reflex agent, and so will loop in an ambiguous state',
+      'Deciding a system needs a utility function because "good enough, cheaply" cannot be written as a goal test',
+    ],
+  },
+  'ag-reflex': {
+    definition:
+      'A simple reflex agent maps the current percept directly to an action through condition–action rules, holding no memory of anything that came before.',
+    whenToUse: [
+      'When the correct action is fully determined by what is visible right now.',
+      'For guard rails and fast paths in front of a more expensive agent.',
+      'Not in a partially observable environment, where it will loop on situations it cannot tell apart.',
+    ],
+    applications: [
+      'Thermostats and other control loops',
+      'Rule-based moderation and rate limiting in front of a model',
+      'The routing layer that answers trivial requests without waking the agent',
+    ],
+  },
+  'ag-model-reflex': {
+    definition:
+      'A model-based reflex agent keeps an internal estimate of the world state, updated by a model of how the world changes and what its own actions do, and fires its rules on that state.',
+    whenToUse: [
+      'When the environment is partially observable and looking again will not tell you everything.',
+      'When the right action depends on what has already been tried.',
+    ],
+    applications: [
+      'A crawler tracking which pages it has already visited',
+      'An agent keeping a task list so it does not repeat a completed sub-task',
+      'Robot localisation, where the internal state estimate is the entire job',
+    ],
+  },
+  'ag-goal': {
+    definition:
+      'A goal-based agent holds a description of the desired state and searches for a sequence of actions that reaches it, rather than following rules keyed to situations.',
+    whenToUse: [
+      'When the same machinery must serve many different objectives — change the goal, not the rules.',
+      'When a model good enough to predict the effect of an action exists.',
+      'Not when outcomes need ranking: a goal is met or not, with no room for "better".',
+    ],
+    applications: [
+      'Route planning and logistics scheduling',
+      'Classical planners in robotics and manufacturing',
+      'An LLM agent given a target state — "the test suite passes" — and left to find the route',
+    ],
+  },
+  'ag-utility': {
+    definition:
+      'A utility-based agent scores possible outcomes with a utility function and chooses the action with the highest expected score, letting it trade off speed, cost and risk.',
+    whenToUse: [
+      'When several outcomes count as success but are not equally good.',
+      'When no action reaches the goal with certainty and the risk must be weighed.',
+      'Not before you can state the trade-off honestly: a wrong utility is pursued exactly.',
+    ],
+    applications: [
+      'Ad auctions and bidding systems maximising expected value',
+      'Portfolio and inventory decisions under uncertainty',
+      'An agent choosing between a fast cheap tool and a slow accurate one',
+    ],
+  },
+  'ag-learning': {
+    definition:
+      'A learning agent has four parts — a performance element that acts, a critic that scores the outcome, a learning element that updates the performance element, and a problem generator that explores.',
+    whenToUse: [
+      'When the environment changes faster than anyone can rewrite the policy.',
+      'When a usable score for outcomes exists — without a critic, nothing can be learned.',
+      'Not for most deployed LLM agents, which improve offline through people editing prompts and tools.',
+    ],
+    applications: [
+      'Recommendation systems updating from clicks',
+      'Game-playing agents improving through self-play',
+      'Bandit-based routing that learns which tool or model to prefer',
+    ],
+  },
+  'ag-bdi': {
+    definition:
+      'A BDI agent separates beliefs about the world, desires it would like to satisfy, and intentions it has committed to — the commitment being what stops it re-deciding every step.',
+    whenToUse: [
+      'When an agent needs to persist with a plan rather than reconsider continuously.',
+      'When goals conflict and something must arbitrate between them explicitly.',
+    ],
+    applications: [
+      'Air traffic and logistics systems, where BDI architectures were deployed commercially',
+      'Simulation agents in training and defence models',
+      'Modern echo: an agent that writes a plan file and follows it instead of re-planning each turn',
+    ],
+  },
+  'ag-layered': {
+    definition:
+      'A layered or subsumption architecture stacks behaviours, with fast reactive layers handling what must be immediate and slower deliberative layers above them able to override.',
+    whenToUse: [
+      'When some responses must be immediate and others can afford to think.',
+      'When you want cheap paths to handle the common case and expensive ones the rest.',
+      'Not when behaviour must be formally specified — emergence is hard to guarantee.',
+    ],
+    applications: [
+      'Mobile robot control, where obstacle avoidance cannot wait for a planner',
+      'Model routing that answers easy requests with a small model and escalates hard ones',
+      'Safety interlocks that can veto whatever the planner decided',
+    ],
+  },
+  'ag-llm-agent': {
+    definition:
+      'An LLM agent is a model-based, goal-directed agent whose internal state is its transcript, whose goal arrives as natural language, and whose policy is a language model.',
+    whenToUse: [
+      'When the task is described in language and the actions are tool calls.',
+      'When breadth matters more than reliability — it generalises widely and guarantees nothing.',
+      'Not when trade-offs must be auditable: its utility function exists only as prose.',
+    ],
+    applications: [
+      'Coding agents, browsing agents and customer support automation',
+      'Data-analysis assistants that write and run their own queries',
+    ],
+  },
+  'ag-anatomy': {
+    definition:
+      'The anatomy of an agent is the machinery built around the model: the tools it may call, how it plans, what it remembers, and what is placed in its context at the moment it decides.',
+    whenToUse: [
+      'When an agent misbehaves — the fix is usually in one of these four parts, not in the model.',
+      'When deciding where to spend engineering effort: tool quality and context curation return the most.',
+    ],
+    applications: [
+      'Rewriting a tool schema to remove a class of invalid calls',
+      'Adding a memory store so an agent stops re-deriving the same facts',
+    ],
+  },
+  'ag-tools': {
+    definition:
+      'A tool is a named function with a typed schema that a model may request by emitting a structured call, which the surrounding program then executes on its behalf.',
+    whenToUse: [
+      'Whenever an agent must affect or observe anything outside its own text.',
+      'Prefer few well-named tools to many overlapping ones — ambiguity produces wrong calls.',
+    ],
+    applications: [
+      'Web search, code execution and file editing in a coding assistant',
+      'Database queries in an analytics agent',
+      'Internal APIs exposed to an agent through a protocol server',
+    ],
+  },
+  'ag-tool-schema': {
+    definition:
+      'A tool schema is the machine-readable description of a tool — its name, parameters, types and prose description — all of which the model reads as instructions.',
+    whenToUse: [
+      'Whenever a tool is called wrongly: read the schema as if it were the prompt, because it is.',
+      'Use enumerated types wherever the valid values are known.',
+    ],
+    applications: [
+      'JSON Schema parameter definitions in function-calling APIs',
+      'MCP tool manifests describing what a server offers',
+    ],
+  },
+  'ag-tool-errors': {
+    definition:
+      'An error observation is the text a failed tool call returns to the model, which becomes the input it uses to decide what to try next.',
+    whenToUse: [
+      'Whenever an agent retries the same failing call — the error text is almost always the cause.',
+      'Include the offending value and the expected shape in every message.',
+    ],
+    applications: [
+      'Validation errors that name the field and show a correct example',
+      'Rate-limit responses that state how long to wait rather than just failing',
+    ],
+  },
+  'ag-mcp': {
+    definition:
+      'A tool protocol such as the Model Context Protocol is a standard interface through which any compliant agent can discover and call tools, resources and prompts exposed by any compliant server.',
+    whenToUse: [
+      'When the same capability must be reachable from several agents or clients.',
+      'Treat third-party tool descriptions as untrusted input, since the model reads them.',
+    ],
+    applications: [
+      'Connecting an assistant to a database, a ticketing system or a repository through one socket',
+      'Shipping an internal capability once and having every team’s agent use it',
+    ],
+  },
+  'ag-planning': {
+    definition:
+      'Planning is how an agent chooses its next action: interleaving thought with action, writing a plan up front, searching over candidate branches, or critiquing and retrying.',
+    whenToUse: [
+      'Interleave when observations should change the plan; plan up front when the route is knowable and cost matters.',
+      'Search only where a wrong action is expensive relative to spending more tokens.',
+    ],
+    applications: [
+      'ReAct loops in general-purpose assistants',
+      'Plan-then-execute pipelines where a cheap model follows a plan a strong one wrote',
+    ],
+  },
+  'ag-react': {
+    definition:
+      'ReAct is an agent pattern that alternates a short reasoning step with a single tool call and its observation, so each action is informed by the result of the last.',
+    whenToUse: [
+      'As the default loop for tool-using agents — simple, legible, and degrades gracefully.',
+      'When the environment can surprise you and a pre-written plan would go stale.',
+      'Not when the whole route is known: planning once and executing is cheaper.',
+    ],
+    applications: [
+      'Search-and-answer assistants that reason between queries',
+      'Coding agents that run a command, read the output and decide the next edit',
+    ],
+  },
+  'ag-plan-execute': {
+    definition:
+      'Plan-and-execute separates producing an explicit plan from carrying it out, often letting a cheaper model perform the steps a stronger one designed.',
+    whenToUse: [
+      'When the task is long and the route is broadly predictable.',
+      'When a person should approve the plan before any action is taken.',
+      'Always pair it with a re-planning trigger, or it follows a plan the world invalidated.',
+    ],
+    applications: [
+      'Migration and refactoring jobs where the file list is known up front',
+      'Research tasks that decompose into a fixed set of searches',
+    ],
+  },
+  'ag-tot': {
+    definition:
+      'Search over thoughts generates several candidate reasoning steps, scores them, expands the promising ones and prunes the rest — classical search with a model supplying moves and heuristic.',
+    whenToUse: [
+      'On hard sub-problems with a checkable structure, not across a whole task.',
+      'Only when a usable score per branch exists; without one it just costs more.',
+    ],
+    applications: [
+      'Puzzle and constraint problems where partial solutions can be evaluated',
+      'Self-consistency sampling on maths problems, where the majority answer is taken',
+    ],
+  },
+  'ag-reflexion': {
+    definition:
+      'Reflection is the pattern of attempting a task, generating a critique of the result, adding that critique to the context, and trying again.',
+    whenToUse: [
+      'When an external signal can ground the critique — tests, a compiler, a schema, a second source.',
+      'Not for ungrounded self-review of prose, where a model largely agrees with itself.',
+      'Cap the retries: three ungrounded attempts rarely beat two.',
+    ],
+    applications: [
+      'Code agents that read a failing test and revise the patch',
+      'Structured extraction that re-runs when validation against a schema fails',
+    ],
+  },
+  'ag-memory': {
+    definition:
+      'Agent memory is the set of stores that hold information beyond the current context window — the working set, past episodes, durable facts, and reusable procedures.',
+    whenToUse: [
+      'When a fact must survive past the end of a session or the end of the window.',
+      'Decide the write rule first: storing everything is equivalent to storing nothing.',
+    ],
+    applications: [
+      'Assistants remembering user preferences across conversations',
+      'Support agents recalling the history of a specific customer',
+      'Coding agents keeping notes on a repository’s conventions',
+    ],
+  },
+  'ag-working': {
+    definition:
+      'Working memory is what sits in the model’s context window at the moment of deciding: the task, the constraints, the recent turns and the observations still relevant.',
+    whenToUse: [
+      'Whenever a run is long enough that something must be dropped — which is most of them.',
+      'Pin the task and constraints; compress the middle, never the instructions.',
+    ],
+    applications: [
+      'Sliding-window transcripts with the original request pinned at the top',
+      'Summarising completed sub-tasks down to their outcome and dropping the detail',
+    ],
+  },
+  'ag-episodic': {
+    definition:
+      'Episodic memory is a record of what the agent did and what happened — past runs, attempted actions and their outcomes — retrieved by recency and similarity.',
+    whenToUse: [
+      'When repeating a failed attempt is a real cost.',
+      'When you need to explain afterwards why the agent did something.',
+    ],
+    applications: [
+      'An agent checking whether it has already tried a search before running it again',
+      'Post-incident review of what an automation actually did',
+    ],
+  },
+  'ag-semantic': {
+    definition:
+      'Semantic memory holds durable facts the agent should treat as true — preferences, entities, decisions and constraints — written during use rather than loaded ahead of time.',
+    whenToUse: [
+      'When a fact learnt in one session must hold in the next.',
+      'When the same context is being re-established at the start of every conversation.',
+    ],
+    applications: [
+      'An assistant remembering a user writes British English and prefers metric units',
+      'A project agent holding the architectural decisions already taken',
+    ],
+  },
+  'ag-procedural': {
+    definition:
+      'Procedural memory stores routines that worked — a sequence of tool calls, a query, a runbook — so they can be replayed rather than rediscovered.',
+    whenToUse: [
+      'When the same multi-step job recurs and rediscovering it each time is wasteful.',
+      'When reliability matters more than flexibility: a stored routine is far more predictable.',
+    ],
+    applications: [
+      'A saved deploy sequence an agent follows step by step',
+      'Reusable query templates for recurring analytics questions',
+    ],
+  },
+  'ag-context': {
+    definition:
+      'Context engineering is the deliberate selection, ordering and compression of everything placed in the model’s window at the moment it makes a decision.',
+    whenToUse: [
+      'Whenever an agent stops following its instructions partway through a long run.',
+      'Before adding retrieval or memory: what is already there may simply be badly ordered.',
+      'Remember that more context is not better context — irrelevant material degrades the choice.',
+    ],
+    applications: [
+      'Pinning the task at the top and the freshest observation at the bottom',
+      'Trimming verbose tool output to the fields the agent actually uses',
+    ],
+  },
+  'ag-sandbox': {
+    definition:
+      'A sandbox is the restricted environment an agent’s actions land in, combined with the approval gates and undo paths that limit what a wrong action can cost.',
+    whenToUse: [
+      'Before granting any write capability at all.',
+      'Classify tools by whether their effects can be undone, not by an abstract risk score.',
+    ],
+    applications: [
+      'Running generated code in a container with no network access',
+      'Agents that open a pull request rather than pushing to the main branch',
+      'Dry-run modes that print the intended change for review',
+    ],
+  },
+  'ag-rag': {
+    definition:
+      'Retrieval-augmented generation fetches relevant documents at question time and places them in the model’s context, so the answer is drawn from those sources rather than from memorised weights.',
+    whenToUse: [
+      'When the knowledge changes faster than a model can be retrained.',
+      'When the documents are private and must not enter training data.',
+      'When the answer must cite a source someone can check.',
+      'Not to change how a model writes or formats — that is what fine-tuning is for.',
+    ],
+    applications: [
+      'Internal documentation assistants answering from a company wiki',
+      'Legal and clinical search where every claim must be traceable to a passage',
+      'Customer support drawing on a product manual that changes weekly',
+      'Code assistants retrieving from a repository they were never trained on',
+    ],
+  },
+  'ag-rag-why': {
+    definition:
+      'The case for retrieval rests on three things weights cannot provide: knowledge that is current, knowledge that stays private, and answers that can be attributed to a source.',
+    whenToUse: [
+      'When choosing between retrieval and fine-tuning: retrieve for facts, fine-tune for form.',
+      'When the requirement is that a human can verify the answer.',
+    ],
+    applications: [
+      'Answering questions about this quarter’s policy, updated last week',
+      'Systems where a regulator expects a citation for every claim',
+    ],
+  },
+  'ag-chunk': {
+    definition:
+      'Chunking is splitting documents into the passages that get embedded, indexed and retrieved — the unit the system can be right or wrong about.',
+    whenToUse: [
+      'Before indexing anything: the split determines the ceiling on retrieval quality.',
+      'Split on structure — headings, sections, function boundaries — before splitting on size.',
+      'Add overlap when answers frequently straddle a boundary.',
+    ],
+    applications: [
+      'Splitting a manual by section so each chunk is about one thing',
+      'Chunking code by function rather than by line count',
+      'Small-to-large retrieval: match a sentence, then hand the model its whole section',
+    ],
+  },
+  'ag-index': {
+    definition:
+      'A vector index stores each chunk as an embedding and finds the nearest ones to a query vector, using an approximate search structure because exact nearest-neighbour search is linear in the corpus.',
+    whenToUse: [
+      'When queries are paraphrases rather than exact terms.',
+      'When the corpus is too large to scan exhaustively per query.',
+      'Not on its own where exact identifiers matter — pair it with lexical search.',
+    ],
+    applications: [
+      'HNSW and IVF indexes in vector databases',
+      'Semantic search over support tickets where no two people phrase a problem alike',
+      'Deduplication and near-duplicate detection across a document set',
+    ],
+  },
+  'ag-hybrid': {
+    definition:
+      'Hybrid search runs a dense vector retriever and a sparse keyword retriever such as BM25 over the same corpus and fuses their rankings into one list.',
+    whenToUse: [
+      'Whenever the corpus contains identifiers, codes, names or jargon that vectors blur together.',
+      'As the first thing to try when a vector-only system disappoints.',
+    ],
+    applications: [
+      'Product catalogues where a part number must match exactly',
+      'Error-code lookup in technical documentation',
+      'Legal search combining citation matching with semantic similarity',
+    ],
+  },
+  'ag-rerank': {
+    definition:
+      'A reranker is a second-stage model that reads the query and a candidate passage together and scores the pair, reordering a shortlist produced by faster first-stage retrieval.',
+    whenToUse: [
+      'When retrieval returns the right passage somewhere in the top fifty but not the top five.',
+      'When you can afford a few hundred milliseconds for a substantial accuracy gain.',
+      'Never as a fix for low recall — it cannot rank a document that was never fetched.',
+    ],
+    applications: [
+      'Cross-encoder rerankers over a shortlist from a vector index',
+      'Enterprise search where precision at the top matters more than latency',
+    ],
+  },
+  'ag-rag-eval': {
+    definition:
+      'Retrieval evaluation measures the search and the answer separately: recall and MRR for whether the right passage was fetched, faithfulness and relevance for whether the answer used it.',
+    whenToUse: [
+      'Before tuning anything, so you know which half of the system is at fault.',
+      'Whenever end-to-end quality moves and nobody can say why.',
+    ],
+    applications: [
+      'A labelled set of questions with known correct passages, run on every change',
+      'Automated faithfulness checks tracing each claim back to a retrieved span',
+    ],
+  },
+  'ag-agentic-rag': {
+    definition:
+      'Agentic RAG makes retrieval a tool the agent can call repeatedly — rewriting the query, reading results, noticing gaps and searching again — rather than a single fetch before answering.',
+    whenToUse: [
+      'For multi-part questions no single query can serve.',
+      'When users ask vague questions that need clarifying into several searches.',
+      'Not for simple lookups, where it multiplies cost and latency for nothing.',
+    ],
+    applications: [
+      'Research assistants that follow a thread across several searches',
+      'Support agents that look up the product, then the version, then the known issue',
+    ],
+  },
+  'ag-graphrag': {
+    definition:
+      'Graph RAG extracts entities and relationships from a corpus into a knowledge graph, then answers by traversing that graph or by reading summaries of its communities, instead of retrieving isolated passages.',
+    whenToUse: [
+      'When the answer requires joining facts stated in different documents.',
+      'When the question is about the corpus as a whole — themes, patterns, coverage — and no single passage contains the answer.',
+      'Not for "find the passage that says X": plain retrieval is better and far cheaper.',
+      'Not when the indexing budget is tight — every document must be read by a model to build the graph.',
+    ],
+    applications: [
+      'Investigative work linking people, companies and events across many filings',
+      'Incident analysis connecting symptoms, services and past changes',
+      'Answering "what are the recurring themes in these ten thousand reviews?"',
+      'Supply-chain questions that chain supplier to factory to region',
+    ],
+  },
+  'ag-kg': {
+    definition:
+      'Graph construction is the indexing pass in which a model reads each chunk, extracts entities and the relations between them, and merges the results into a single graph.',
+    whenToUse: [
+      'Constrain the entity and relation types up front — an open schema produces an unusable graph.',
+      'Budget explicitly for entity resolution; it decides whether the graph is worth having.',
+    ],
+    applications: [
+      'Building an organisation graph from contracts and filings',
+      'Extracting a symptom–treatment graph from clinical notes',
+    ],
+  },
+  'ag-community': {
+    definition:
+      'Community summarisation clusters the knowledge graph into groups of densely connected nodes, summarises each group, and summarises those summaries into a hierarchy answerable at any level.',
+    whenToUse: [
+      'For global questions about a whole corpus, where retrieving ten passages cannot help.',
+      'When the same broad questions recur and the summaries can be built once, offline.',
+    ],
+    applications: [
+      'Thematic overviews of a large document collection',
+      'Executive summaries generated from thousands of customer conversations',
+    ],
+  },
+  'ag-multihop': {
+    definition:
+      'Multi-hop traversal answers a question by following edges through the graph, joining facts stated in different documents that no single passage contains together.',
+    whenToUse: [
+      'When the question has the shape "A relates to B, and B relates to what you asked".',
+      'Bound the hops and restrict which edge types may be followed, or the candidate set explodes.',
+    ],
+    applications: [
+      'Finding which customers are affected by an outage in a specific data centre',
+      'Tracing an ingredient through a supplier network to the finished products',
+    ],
+  },
+  'ag-topology': {
+    definition:
+      'An agent topology is the arrangement of several agents and the rule for who decides what — a pipeline, a manager with workers, a hierarchy, a swarm, or a shared workspace.',
+    whenToUse: [
+      'Only after a single agent with more tools has genuinely run out of road.',
+      'Choose it by the bottleneck: context pressure, permission boundaries, or wall-clock time.',
+      'Not for elegance — every extra agent adds a handover, and handovers lose context.',
+    ],
+    applications: [
+      'A manager agent splitting a research brief across several search workers',
+      'Support systems handing a conversation from triage to a specialist',
+      'Generate-and-critique pairs used to raise the quality of written output',
+    ],
+  },
+  'ag-single': {
+    definition:
+      'A single-agent design is one loop with one context and many tools, where nothing is lost to a handover and the whole trace lives in one place.',
+    whenToUse: [
+      'As the default. Add tools before adding agents.',
+      'Until one of three things binds: the context will not hold the task, parts need different permissions, or parts could run concurrently.',
+    ],
+    applications: [
+      'Most coding assistants, which are one agent with a large tool set',
+      'Support agents handling a whole conversation without transfer',
+    ],
+  },
+  'ag-pipeline-topo': {
+    definition:
+      'A sequential pipeline chains specialised agents in a fixed order, each consuming the previous stage’s output — a workflow whose stages happen to be model calls.',
+    whenToUse: [
+      'When the stages are genuinely fixed and each can be tested on its own.',
+      'When different stages want different models or different permissions.',
+      'Remember reliability multiplies: five 95% stages finish 77% of the time.',
+    ],
+    applications: [
+      'Extract, then validate, then summarise document pipelines',
+      'Translation followed by a separate review pass',
+    ],
+  },
+  'ag-manager': {
+    definition:
+      'An orchestrator–worker topology has one manager agent that decomposes the task, assigns sub-tasks to workers, reads their results and decides what happens next — the Magentic pattern making that state explicit as ledgers of facts and plan.',
+    whenToUse: [
+      'When sub-tasks are discovered at runtime rather than known in advance.',
+      'When workers should be narrow — few tools, tight permissions — and only one agent needs the whole picture.',
+      'Watch the manager’s context: it accumulates everything the workers return.',
+    ],
+    applications: [
+      'Research systems where a lead agent spawns searches and synthesises the findings',
+      'Magentic-One coordinating a browser, a coder and a file agent through explicit ledgers',
+      'Build systems delegating per-module work and collecting the results',
+    ],
+  },
+  'ag-hierarchy': {
+    definition:
+      'A hierarchical topology nests the manager pattern by depth, with leads delegating to sub-leads who delegate to workers, each level summarising upward.',
+    whenToUse: [
+      'When the task is too large for any single context, even a manager’s.',
+      'Pass the original requirement down verbatim, or three summaries will paraphrase it away.',
+      'Two levels is usually the practical limit before fidelity loss outweighs the gain.',
+    ],
+    applications: [
+      'Large migrations split by service, then by module',
+      'Document processing at a scale where no agent can see the whole corpus',
+    ],
+  },
+  'ag-parallel': {
+    definition:
+      'Parallel fan-out either splits independent sub-tasks across simultaneous workers and joins the results, or runs the same task several times and picks the best answer.',
+    whenToUse: [
+      'Section the work when the parts are genuinely independent; otherwise workers duplicate and contradict.',
+      'Vote when the answer is checkable and accuracy matters more than cost.',
+      'Remember cost scales with the fan-out even though latency does not.',
+    ],
+    applications: [
+      'Reviewing a change for security, performance and style at the same time',
+      'Sampling several solutions to a hard problem and keeping the one that passes the tests',
+      'Processing a hundred documents concurrently and merging the extractions',
+    ],
+  },
+  'ag-swarm': {
+    definition:
+      'A swarm or handoff topology is decentralised: any agent may transfer control and context to another it judges better suited, with no manager holding the task state.',
+    whenToUse: [
+      'For triage and routing, where specialists are well defined and handover is natural.',
+      'When a central manager would be a bottleneck.',
+      'Always count and cap handoffs — two agents passing work back and forth is the signature failure.',
+    ],
+    applications: [
+      'Customer service transferring between billing, technical and refunds specialists',
+      'Escalation paths that move a conversation to a more capable agent',
+    ],
+  },
+  'ag-debate': {
+    definition:
+      'A debate or critique topology pairs a generating agent with one whose only job is to find fault, with a fixed number of rounds and an arbitration rule.',
+    whenToUse: [
+      'When mistakes are easier to recognise than to avoid.',
+      'When the critic can check against something external — tests, a source, a schema.',
+      'Not when both agents share a model and therefore a blind spot.',
+    ],
+    applications: [
+      'Code review agents attacking a patch before it is proposed',
+      'Fact-checking passes over generated summaries',
+    ],
+  },
+  'ag-blackboard': {
+    definition:
+      'A blackboard topology has agents read from and write to one shared structure rather than messaging each other, acting whenever the shared state warrants it.',
+    whenToUse: [
+      'When several agents contribute to one artefact and the state should be inspectable in one place.',
+      'When coordination is better expressed as a shared document than as a conversation.',
+      'Only with a locking or merge rule, or agents will overwrite one another.',
+    ],
+    applications: [
+      'A shared plan or task file several agents update as work proceeds',
+      'A repository or document that multiple agents edit under version control',
+    ],
+  },
+  'ag-choose': {
+    definition:
+      'Choosing a topology is a short decision procedure: try one agent first, then split only along whichever constraint actually binds — context, permissions or concurrency.',
+    whenToUse: [
+      'Before adding a second agent, to name which of the three constraints is being relieved.',
+      'When a multi-agent system underperforms a single agent, which is a common and under-reported outcome.',
+    ],
+    applications: [
+      'Rejecting a proposed five-agent design in favour of one agent with five tools',
+      'Splitting a write-capable agent from a read-only one purely for permission isolation',
+    ],
+  },
+  'ag-ops': {
+    definition:
+      'Operating an agent means instrumenting every turn, evaluating against fixed cases run repeatedly, budgeting cost and latency, and recognising the standard failure modes by name.',
+    whenToUse: [
+      'From the first prototype: the trace is what makes every later problem legible.',
+      'Whenever someone claims an agent works on the strength of one successful run.',
+    ],
+    applications: [
+      'Trace viewers showing each turn’s context, choice, result and cost',
+      'Regression suites of real tasks run ten times each on every change',
+    ],
+  },
+  'ag-trace': {
+    definition:
+      'A trace is the recorded sequence of an agent run — the assembled context, the chosen action, the tool result, and the cost, for every turn.',
+    whenToUse: [
+      'Always. Debugging an agent without one is guesswork.',
+      'Record the context as actually assembled, not the template that produced it.',
+    ],
+    applications: [
+      'OpenTelemetry-style spans per turn in agent observability tools',
+      'Post-mortems that replay exactly what the agent saw before a bad action',
+    ],
+  },
+  'ag-bench': {
+    definition:
+      'Agent evaluation is a fixed set of tasks with checkable success conditions, run repeatedly so that a pass rate rather than a single outcome is reported.',
+    whenToUse: [
+      'Build your own set before trusting any public benchmark for your use case.',
+      'Report variance alongside the mean — an agent that works half the time averages well.',
+    ],
+    applications: [
+      'SWE-bench, GAIA, WebArena and τ-bench for comparing models',
+      'Twenty real internal tasks with machine-checkable outcomes, run on every deploy',
+    ],
+  },
+  'ag-cost': {
+    definition:
+      'Agent cost grows with the square of the number of turns, because every turn re-reads the whole accumulated transcript, while latency grows linearly with it.',
+    whenToUse: [
+      'When setting budgets: ceilings on turns, tokens and wall-clock all belong inside the loop.',
+      'When a run is unexpectedly expensive — look at transcript growth before blaming the model price.',
+    ],
+    applications: [
+      'Prompt caching of the fixed prefix to remove the per-turn constant',
+      'Hard turn limits that end a run rather than letting it wander',
+    ],
+  },
+  'ag-failure': {
+    definition:
+      'The four recurring agent failure modes are repetition loops, goal drift, context rot, and premature claims of completion — each with a structural countermeasure rather than a prompt fix.',
+    whenToUse: [
+      'When diagnosing a misbehaving agent: name the failure first, then apply its specific countermeasure.',
+      'When reviewing a design, to check each of the four is actually handled.',
+    ],
+    applications: [
+      'Action-hash loop detection that halts a repeating agent',
+      'Completion checks that verify the outcome rather than trusting the report',
+    ],
+  },
+  'ag-loops': {
+    definition:
+      'A repetition loop is an agent repeating an action that is not working, because nothing in its context distinguishes this turn from the last.',
+    whenToUse: [
+      'Detect it by hashing recent actions and halting on a repeat.',
+      'Fix it upstream, in the error message that failed to say what was wrong.',
+    ],
+    applications: [
+      'Retry caps per tool call',
+      'Loop detectors that escalate to a human after two identical attempts',
+    ],
+  },
+  'ag-drift': {
+    definition:
+      'Goal drift is an agent ending up working on something nobody asked for, by way of twenty individually reasonable steps.',
+    whenToUse: [
+      'Whenever a long run finishes with a plausible result that answers a different question.',
+      'Counter it by keeping the original request verbatim in context and checking progress against it.',
+    ],
+    applications: [
+      'A debugging detour that quietly becomes the task',
+      'Periodic progress checks that compare against the original brief, not the last turn',
+    ],
+  },
+  'ag-context-rot': {
+    definition:
+      'Context rot is the accumulation of stale observations and abandoned attempts until the instructions that mattered are buried where the model attends least.',
+    whenToUse: [
+      'When an agent stops following its rules partway through a long run.',
+      'Curate actively — drop what is finished, compress what is old — rather than buying a bigger window.',
+    ],
+    applications: [
+      'Pruning completed sub-task detail down to its outcome',
+      'Trimming verbose tool output to the fields actually used',
+    ],
+  },
+  'ag-overclaim': {
+    definition:
+      'Premature completion is an agent reporting success because the transcript resembles a successful one, with nothing having verified the outcome.',
+    whenToUse: [
+      'Whenever an agent’s own report is the only evidence a task was finished.',
+      'Counter it with a completion check the agent did not author.',
+    ],
+    applications: [
+      'Running the test suite rather than trusting "the fix is complete"',
+      'Re-reading the written file, or re-querying the record, before reporting done',
+    ],
+  },
+  'ag-hitl': {
+    definition:
+      'Human-in-the-loop design places approval gates at the points where an agent’s action is irreversible, expensive or outside its agreed scope — and nowhere else.',
+    whenToUse: [
+      'Gate on irreversibility rather than on a general sense of risk.',
+      'Keep gates rare: an agent that asks about everything gets approved without being read.',
+    ],
+    applications: [
+      'Confirming before sending an email, issuing a refund or deleting records',
+      'Plan approval before a long autonomous run begins',
+    ],
+  },
+  'ag-safety': {
+    definition:
+      'Agent security is the practice of limiting what a compromised or mistaken agent can do, on the assumption that the model itself cannot be relied upon to refuse.',
+    whenToUse: [
+      'Before granting any capability that writes, spends or sends.',
+      'Whenever an agent reads content that someone outside your organisation can influence.',
+    ],
+    applications: [
+      'Scoped, short-lived credentials issued per tool',
+      'Agents that can read the web but cannot send anything outward',
+    ],
+  },
+  'ag-injection': {
+    definition:
+      'Prompt injection is an attack in which text the agent reads while working — a web page, a document, a tool description — is treated as instructions and obeyed.',
+    whenToUse: [
+      'Assume it whenever an agent reads anything an attacker could influence.',
+      'Do not attempt to solve it by prompt wording; instructions to ignore instructions are themselves just text.',
+    ],
+    applications: [
+      'Hidden text on a web page instructing a browsing agent to exfiltrate data',
+      'A poisoned code comment aimed at an agent reviewing a repository',
+      'A malicious tool description served by a third-party protocol server',
+    ],
+  },
+  'ag-trifecta': {
+    definition:
+      'The lethal trifecta is the combination of access to private data, exposure to attacker-controlled content, and the ability to communicate externally — dangerous only when all three are present at once.',
+    whenToUse: [
+      'As the first audit of any agent design: name the three legs and remove one.',
+      'The outbound leg is usually easiest to remove, and hides in places like rendered image URLs.',
+    ],
+    applications: [
+      'An assistant with inbox access that browses the web and can send mail',
+      'A repository agent that reads issues from strangers and can open network connections',
+    ],
+  },
+  'ag-least-priv': {
+    definition:
+      'Least privilege means giving an agent the narrowest credentials that still let it do the job — scoped per tool, short-lived, and under its own identity rather than the user’s.',
+    whenToUse: [
+      'Always, and especially where a prompt-level defence is being relied on instead.',
+      'Scope per tool: a search tool and a delete tool should never share a credential.',
+    ],
+    applications: [
+      'A token valid for one repository rather than an organisation',
+      'Read replicas for analytics agents so no write path exists at all',
+      'Separate service accounts so an agent’s actions are distinguishable in the audit log',
+    ],
+  },
+  'ag-runaway': {
+    definition:
+      'Runaway control is the set of hard limits and reversal paths — turn caps, spend caps, rate limits and undo — that bound what a malfunctioning agent can cost.',
+    whenToUse: [
+      'Before the first production run, since a demo never reaches the limit.',
+      'Rate-limit write tools separately and far more tightly than read tools.',
+    ],
+    applications: [
+      'Spend ceilings that halt a run rather than letting it continue',
+      'Soft deletes and staged applies so an action can be reversed',
+      'Agents that propose a branch rather than writing to the main one',
+    ],
+  },
 }
 
 /**

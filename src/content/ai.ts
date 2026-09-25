@@ -464,14 +464,15 @@ export const aiWorld: TopicNode = {
         },
         {
           id: 'gen-agents',
-          icon: 'network',
-          title: 'Tools and agents',
+          icon: 'loop',
+          title: 'Agentic AI',
           tagline: 'Let it act, not just answer',
-          weight: 2,
+          weight: 3,
+          world: 'agents',
           summary:
-            'Give the model the ability to call a search engine, run code or edit a file, and it stops being a text predictor and starts being a system that acts. Reliability over long chains of actions is the open engineering problem of right now.',
+            'Give the model the ability to call a search engine, run code or edit a file, and it stops being a text predictor and starts being a system that acts. Reliability over long chains of actions is the open engineering problem of right now. Opens the full map: the loop, the agent taxonomy, retrieval and Graph RAG, multi-agent topologies, and how any of it is evaluated.',
           simple:
-            'Once the model can use tools — search the web, run a program — it can do jobs rather than just talk about them. Getting it to do long jobs without going off track is the hard part today.',
+            'Once the model can use tools — search the web, run a program — it can do jobs rather than just talk about them. Getting it to do long jobs without going off track is the hard part today. Open this for the whole map of it.',
         },
       ],
     },

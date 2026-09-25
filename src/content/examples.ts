@@ -7450,7 +7450,986 @@ const PIPELINE: Record<string, Example[]> = {
         note: 'Keeping the two in balance is the hard part: if either wins decisively the other stops receiving a useful gradient, and training stalls with no error to show for it.' }) } }],
 }
 
+
+// ─────────────────────────────────────────────── agentic AI
+const AGENTS: Record<string, Example[]> = {
+  agents: [
+    {
+      level: 'basic',
+      title: 'Why long agent runs fail',
+      blurb: 'Every step has to be right. Work out what that costs over a whole task.',
+      where: [
+        { sym: 'p', is: 'the chance one step is right' },
+        { sym: 'n', is: 'how many steps the task takes' },
+        { sym: 'pⁿ', is: 'the chance every step in a row is right' },
+      ],
+      how:
+        'Multiply p by itself once per step. Nothing here is specific to AI — it is the reliability of any chain — but agents are the first systems where a single component is asked to be right fifty times consecutively.',
+      inputs: [
+        n('p', 'each step is right (%)', 95, 50, 99.9, 0.1, 'Per-step accuracy. It feels high. Watch what fifty of them do to it.'),
+        n('n', 'steps in the task', 20, 1, 100, 1, 'How long the task is. This is the exponent, which is why length hurts so much more than difficulty.'),
+      ],
+      run: (v) => {
+        const p = v.p / 100
+        const whole = Math.pow(p, v.n)
+        return {
+          formula: 'P(task completes) = pⁿ',
+          steps: [
+            ['per step', `${f(v.p, 1)}%`],
+            ['steps', String(v.n)],
+            ['expected failures', f(v.n * (1 - p), 2)],
+          ],
+          result: `${f(whole * 100, 1)}% of runs finish correctly`,
+          note: 'At 95% per step, twenty steps finish about a third of the time. Raise the per-step figure to 99% and the same task finishes 82% of the time — the exponent is unforgiving, which is why agent work is mostly about catching mistakes rather than avoiding them.',
+        }
+      },
+    },
+    {
+      level: 'harder',
+      title: 'What checking is worth',
+      blurb: 'Catching mistakes changes the base of the exponent, not the exponent.',
+      where: [
+        { sym: 'p', is: 'the chance one step is right first time' },
+        { sym: 'c', is: 'the share of mistakes that get caught and retried' },
+        { sym: 'p + (1−p)c', is: 'the effective per-step reliability once checking is in place' },
+      ],
+      how:
+        'A caught mistake costs a retry rather than the run, so the effective per-step figure rises. Because that figure is then raised to the power of n, a modest improvement in catching compounds into a large one over a long task.',
+      inputs: [
+        n('p', 'right first time (%)', 90, 50, 99, 1, 'Raw per-step accuracy, before any checking.'),
+        n('c', 'mistakes caught (%)', 70, 0, 99, 1, 'How often a wrong step is noticed and retried. This is the dial verification actually moves.'),
+        n('n', 'steps', 30, 1, 100, 1, 'Task length. The longer the task, the more catching is worth relative to raw accuracy.'),
+      ],
+      run: (v) => {
+        const p = v.p / 100
+        const c = v.c / 100
+        const eff = p + (1 - p) * c
+        const bare = Math.pow(p, v.n)
+        const checked = Math.pow(eff, v.n)
+        return {
+          formula: 'P = [p + (1−p)·c]ⁿ',
+          steps: [
+            ['effective per step', `${f(eff * 100, 1)}%`],
+            ['without checking', `${f(bare * 100, 2)}%`],
+            ['with checking', `${f(checked * 100, 2)}%`],
+          ],
+          result: `checking is worth ${f((checked - bare) * 100, 1)} points`,
+          note: 'Compare two routes to the same place: raising raw accuracy from 90% to 95%, or catching 70% of the mistakes you already make. Over thirty steps the second wins comfortably, and it is the one you can actually build.',
+        }
+      },
+    },
+  ],
+  'ag-loop': [
+    {
+      level: 'basic',
+      title: 'What a run actually costs',
+      blurb: 'Each turn re-reads everything before it. Total tokens grow with the square of the turns.',
+      where: [
+        { sym: 'T', is: 'how many turns the loop runs' },
+        { sym: 'c₀', is: 'the fixed prefix: system prompt, tool definitions, the task' },
+        { sym: 'ō', is: 'the average tokens one observation adds per turn' },
+        { sym: 'T²/2 · ō', is: 'the transcript re-read, which is where the cost really goes' },
+      ],
+      how:
+        'Add the context up at every turn rather than once at the end. The fixed prefix is paid T times; the transcript is paid roughly T²/2 times, and past about ten turns that second term is the whole bill.',
+      inputs: [
+        n('T', 'turns', 20, 1, 100, 1, 'Double this and the total roughly quadruples. That is the entire lesson.'),
+        n('c0', 'fixed prefix (tokens)', 900, 100, 20000, 100, 'Paid on every single turn. Prompt caching is what removes this term — and only this term.'),
+        n('obs', 'tokens per observation', 300, 20, 5000, 10, 'What a tool returns. Trimming verbose output attacks the quadratic term directly.'),
+      ],
+      run: (v) => {
+        let running = v.c0
+        let total = 0
+        for (let t = 0; t < v.T; t++) {
+          total += running
+          running += v.obs
+        }
+        const naive = v.T * v.c0 + v.T * v.obs
+        return {
+          formula: 'total ≈ T·c₀ + (T²/2)·ō',
+          steps: [
+            ['final transcript', `${Math.round(running).toLocaleString()} tokens`],
+            ['if each turn were independent', `${Math.round(naive).toLocaleString()} tokens`],
+            ['fixed prefix term', `${Math.round(v.T * v.c0).toLocaleString()} tokens`],
+          ],
+          result: `${Math.round(total).toLocaleString()} tokens processed`,
+          note: 'The final transcript is the number people quote; the total is the number they are billed for. Trimming tool output is worth more than shortening the system prompt, because one sits in the quadratic term and the other does not.',
+        }
+      },
+    },
+  ],
+  'ag-cost': [
+    {
+      level: 'harder',
+      title: 'Where the budget goes',
+      blurb: 'Set a turn ceiling by working backwards from what you are willing to spend.',
+      where: [
+        { sym: 'T', is: 'the turn ceiling you are choosing' },
+        { sym: 'rate', is: 'price per thousand input tokens' },
+        { sym: 'cache', is: 'the share of the fixed prefix served from cache at a reduced rate' },
+      ],
+      how:
+        'Compute the tokens as in the loop example, then price them. Caching removes most of the linear term and none of the quadratic one, which is why it helps short runs far more than long ones.',
+      inputs: [
+        n('T', 'turn ceiling', 30, 1, 120, 1, 'The cap you are setting. Push it up and watch the price curve bend rather than climb.'),
+        n('c0', 'fixed prefix (tokens)', 2000, 100, 30000, 100, 'Large tool sets live here. This is the part caching addresses.'),
+        n('obs', 'tokens per observation', 400, 20, 4000, 10, 'Untrimmed tool output is the most common cause of a surprising bill.'),
+        n('rate', 'price per 1k tokens (pence)', 0.3, 0.01, 5, 0.01, 'Whatever your model costs. The shape of the curve does not depend on it.'),
+      ],
+      run: (v) => {
+        let running = v.c0
+        let total = 0
+        for (let t = 0; t < v.T; t++) {
+          total += running
+          running += v.obs
+        }
+        const prefix = v.T * v.c0
+        const cost = (total / 1000) * v.rate
+        const cached = ((total - prefix * 0.9) / 1000) * v.rate
+        return {
+          formula: 'cost = (tokens processed ÷ 1000) × rate',
+          steps: [
+            ['tokens processed', Math.round(total).toLocaleString()],
+            ['of which fixed prefix', Math.round(prefix).toLocaleString()],
+            ['with 90% of the prefix cached', `${cached.toFixed(1)}p`],
+          ],
+          result: `${cost.toFixed(1)}p per run`,
+          note: 'Halve the turn ceiling and the cost falls by about two thirds. This is why a turn limit is a more effective cost control than a cheaper model, and why it belongs inside the loop rather than in a dashboard.',
+        }
+      },
+    },
+  ],
+  'ag-vs-workflow': [
+    {
+      level: 'basic',
+      title: 'What the loop is costing you',
+      blurb: 'The same job as a fixed workflow and as an agent, priced side by side.',
+      where: [
+        { sym: 'steps', is: 'how many model calls the fixed workflow makes' },
+        { sym: 'turns', is: 'how many turns the agent takes for the same job' },
+        { sym: 'adaptive', is: 'the share of jobs that genuinely need the loop' },
+      ],
+      how:
+        'A workflow pays a flat per-step price; an agent pays the quadratic. Then weight by how often the flexibility is actually used — if that share is small, the routed hybrid wins easily.',
+      inputs: [
+        n('steps', 'workflow steps', 4, 1, 20, 1, 'Fixed model calls, each reading only what it needs.'),
+        n('turns', 'agent turns for the same job', 12, 1, 60, 1, 'The loop rediscovers the route each time, which is what you are paying for.'),
+        n('adaptive', 'jobs that truly need the loop (%)', 15, 0, 100, 1, 'Drop this towards 10% and the case for routing most work to the workflow becomes overwhelming.'),
+        n('obs', 'tokens per step', 700, 100, 4000, 50, 'Roughly what each step reads.'),
+      ],
+      run: (v) => {
+        const flow = v.steps * v.obs
+        let running = v.obs
+        let agent = 0
+        for (let t = 0; t < v.turns; t++) {
+          agent += running
+          running += v.obs
+        }
+        const share = v.adaptive / 100
+        const mixed = (1 - share) * flow + share * agent
+        return {
+          formula: 'mixed = (1−adaptive)·workflow + adaptive·agent',
+          steps: [
+            ['workflow', `${Math.round(flow).toLocaleString()} tokens`],
+            ['agent', `${Math.round(agent).toLocaleString()} tokens`],
+            ['ratio', `${f(agent / Math.max(flow, 1), 1)}×`],
+          ],
+          result: `routed: ${Math.round(mixed).toLocaleString()} tokens per job`,
+          note: 'The agent is not slightly more expensive, it is several times more expensive — and on most of the traffic it is buying flexibility nobody needed. Routing the easy majority to the fixed path is usually the largest single saving available.',
+        }
+      },
+    },
+  ],
+  'ag-utility': [
+    {
+      level: 'harder',
+      title: 'Choosing between two tools',
+      blurb: 'A fast cheap tool and a slow accurate one. Expected utility picks.',
+      where: [
+        { sym: 'P(success)', is: 'how often each tool returns the right answer' },
+        { sym: 'U', is: 'the value of a correct answer, in whatever unit you are trading against' },
+        { sym: 'cost', is: 'what the call costs, in the same unit' },
+        { sym: 'EU', is: 'expected utility: P(success)·U − cost' },
+      ],
+      how:
+        'Multiply the value of success by how often you get it, then subtract what the attempt costs. Whichever is higher is the rational choice — and notice that as the value of being right rises, the accurate tool wins regardless of price.',
+      inputs: [
+        n('pf', 'fast tool succeeds (%)', 70, 0, 100, 1, 'Cheap and often right. Good enough for most questions.'),
+        n('ps', 'accurate tool succeeds (%)', 95, 0, 100, 1, 'The careful option.'),
+        n('cf', 'fast tool cost', 1, 0, 50, 0.5, 'Pennies, milliseconds, whatever you are budgeting.'),
+        n('cs', 'accurate tool cost', 12, 0, 80, 0.5, 'Raise it until the fast tool wins, and note where the crossover falls.'),
+        n('u', 'value of a right answer', 40, 1, 200, 1, 'The thing people forget to state. As it rises, accuracy stops being negotiable.'),
+      ],
+      run: (v) => {
+        const fast = (v.pf / 100) * v.u - v.cf
+        const slow = (v.ps / 100) * v.u - v.cs
+        return {
+          formula: 'EU = P(success) × U − cost',
+          steps: [
+            ['fast tool', f(fast, 2)],
+            ['accurate tool', f(slow, 2)],
+            ['difference', f(slow - fast, 2)],
+          ],
+          result: slow > fast ? 'choose the accurate tool' : 'choose the fast tool',
+          note: 'The crossover moves with the value of being right, not with the price of the tools. An agent given no sense of that value cannot make this trade — which is exactly the gap between a goal-based agent and a utility-based one.',
+        }
+      },
+    },
+  ],
+  'ag-rag': [
+    {
+      level: 'basic',
+      title: 'Retrieval only helps if it retrieves',
+      blurb: 'Recall caps the whole system. Perfect reading of the wrong passage is worth nothing.',
+      where: [
+        { sym: 'r', is: 'recall — how often the passage holding the answer is actually fetched' },
+        { sym: 'u', is: 'how often the model answers correctly once it has that passage' },
+        { sym: 'b', is: 'what it would score unaided, on the questions retrieval missed' },
+      ],
+      how:
+        'Split the questions into the ones retrieval served and the ones it did not, score each group, and add. The first term has a hard ceiling at r, which is why prompt work cannot rescue a weak retriever.',
+      inputs: [
+        n('r', 'right passage retrieved (%)', 80, 0, 100, 1, 'The ceiling on the whole system. Fix this before touching anything else.'),
+        n('u', 'used correctly once fetched (%)', 90, 0, 100, 1, 'Usually the easier half, and the one people spend their time on.'),
+        n('b', 'right without help (%)', 40, 0, 100, 1, 'The unaided baseline. If retrieval is not clearly beating this, it is not earning its complexity.'),
+      ],
+      run: (v) => {
+        const r = v.r / 100
+        const acc = r * (v.u / 100) + (1 - r) * (v.b / 100)
+        return {
+          formula: 'accuracy = r·u + (1−r)·b',
+          steps: [
+            ['when it retrieves', `${f(r * (v.u / 100) * 100, 1)}%`],
+            ['when it does not', `${f((1 - r) * (v.b / 100) * 100, 1)}%`],
+            ['ceiling at this recall', `${f((r * 100 + (1 - r) * v.b), 1)}%`],
+          ],
+          result: `${f(acc * 100, 1)}% overall`,
+          note: 'Try raising u to 100% and then raising r by ten points instead. The second is worth more at almost every setting — which is why most disappointing RAG systems have a search problem, not a model problem.',
+        }
+      },
+    },
+  ],
+  'ag-chunk': [
+    {
+      level: 'harder',
+      title: 'Chunk size and the straddled answer',
+      blurb: 'Answers that cross a boundary are lost unless the chunks overlap.',
+      where: [
+        { sym: 'a', is: 'how long the answer span is, in tokens' },
+        { sym: 'c', is: 'chunk size' },
+        { sym: 'v', is: 'overlap between neighbouring chunks' },
+        { sym: 'a/(c−v)', is: 'roughly the chance a randomly placed span crosses a cut' },
+      ],
+      how:
+        'A span is lost when it straddles a boundary and the overlap does not cover it. Larger chunks straddle less often and dilute the embedding; overlap buys the boundary back at a storage cost you can price.',
+      inputs: [
+        n('c', 'chunk size (tokens)', 400, 50, 2000, 10, 'Bigger chunks straddle less and embed worse, because one vector now averages several topics.'),
+        n('v', 'overlap (tokens)', 50, 0, 400, 10, 'The cheapest fix for straddling, paid in duplicated storage.'),
+        n('a', 'answer span (tokens)', 120, 10, 800, 10, 'How long the passage that answers the question is.'),
+        n('docs', 'corpus size (k tokens)', 500, 10, 20000, 10, 'Used only to price the overlap.'),
+      ],
+      run: (v) => {
+        const stride = Math.max(v.c - v.v, 1)
+        const straddle = Math.min(Math.max((v.a - v.v) / stride, 0), 1)
+        const chunks = Math.ceil((v.docs * 1000) / stride)
+        const plain = Math.ceil((v.docs * 1000) / v.c)
+        return {
+          formula: 'P(lost) ≈ max(a − v, 0) ÷ (c − v)',
+          steps: [
+            ['stride between chunks', `${stride} tokens`],
+            ['chunks stored', chunks.toLocaleString()],
+            ['storage vs no overlap', `${f(chunks / Math.max(plain, 1), 2)}×`],
+          ],
+          result: `${f(straddle * 100, 1)}% of answers cut in half`,
+          note: 'Set the overlap above the answer span and the straddling term goes to zero — at a storage multiple you can read off above. This is why "what does a typical answer look like" is a better guide to chunk size than any default.',
+        }
+      },
+    },
+  ],
+  'ag-index': [
+    {
+      level: 'harder',
+      title: 'The recall you traded for speed',
+      blurb: 'Approximate search is a dial. If nobody set it, it was set for you.',
+      where: [
+        { sym: 'N', is: 'chunks in the corpus' },
+        { sym: 'exact', is: 'comparisons an exhaustive scan would make — one per chunk' },
+        { sym: 'ANN recall', is: 'the share of true nearest neighbours the index actually returns' },
+      ],
+      how:
+        'An exhaustive scan touches every chunk; a graph index touches something closer to log N of them. The speed-up is the ratio, and the price is the few percent of neighbours quietly missed.',
+      inputs: [
+        n('N', 'chunks indexed (thousands)', 500, 1, 50000, 1, 'Corpus size. The larger it is, the more the approximation is worth.'),
+        n('rec', 'ANN recall (%)', 95, 50, 100, 0.5, 'The knob. Pushing it to 99% typically costs several times the search work.'),
+        n('use', 'used correctly once fetched (%)', 90, 0, 100, 1, 'Unchanged by the index — this is purely the retrieval side.'),
+      ],
+      run: (v) => {
+        const N = v.N * 1000
+        const probes = Math.max(Math.round(Math.log2(N) * 16), 1)
+        const end = (v.rec / 100) * (v.use / 100)
+        return {
+          formula: 'speed-up ≈ N ÷ probes,   recall cost = 1 − ANN recall',
+          steps: [
+            ['exhaustive comparisons', N.toLocaleString()],
+            ['graph index probes', probes.toLocaleString()],
+            ['speed-up', `${f(N / probes, 0)}×`],
+          ],
+          result: `${f(end * 100, 1)}% of answerable questions answered`,
+          note: 'Half a million chunks scanned exactly is more than a thousand times the work of a graph index probing a few hundred. The five percent of neighbours given up for that is invisible in a demo and shows up as an unexplained miss rate in production.',
+        }
+      },
+    },
+  ],
+  'ag-hybrid': [
+    {
+      level: 'basic',
+      title: 'Fusing two rankings',
+      blurb: 'Reciprocal rank fusion, computed on one document.',
+      where: [
+        { sym: 'rankᵢ', is: 'where retriever i placed the document, counting from 1' },
+        { sym: 'k', is: 'the damping constant, conventionally 60' },
+        { sym: 'RRF', is: 'the sum of 1/(k + rank) across the retrievers' },
+      ],
+      how:
+        'Only ranks are used, never scores, so a cosine similarity and a BM25 score combine without calibration. Lower k makes the top rank dominate; higher k flattens the vote towards agreement.',
+      inputs: [
+        n('d1', 'vector rank of document A', 1, 1, 50, 1, 'Loved by one retriever.'),
+        n('l1', 'BM25 rank of document A', 40, 1, 50, 1, 'Ignored by the other. Move it towards 1 and watch A pull ahead.'),
+        n('d2', 'vector rank of document B', 6, 1, 50, 1, 'Middling with both retrievers — the case RRF is built to reward.'),
+        n('l2', 'BM25 rank of document B', 5, 1, 50, 1, 'Also middling.'),
+        n('k', 'damping k', 60, 1, 120, 1, 'Drop it towards 1 and whoever ranked first wins outright.'),
+      ],
+      run: (v) => {
+        const a = 1 / (v.k + v.d1) + 1 / (v.k + v.l1)
+        const b = 1 / (v.k + v.d2) + 1 / (v.k + v.l2)
+        return {
+          formula: 'RRF(d) = Σᵢ 1 ÷ (k + rankᵢ)',
+          steps: [
+            ['document A', f(a, 5)],
+            ['document B', f(b, 5)],
+            ['gap', f(Math.abs(a - b), 5)],
+          ],
+          result: a > b ? 'A ranks above B' : 'B ranks above A',
+          note: 'At k = 60, B wins: a document both retrievers quite liked beats one that only a single retriever loved. Drag k down to 3 and A takes it back. That constant is the whole editorial judgement of the fusion, and it is usually left at its default.',
+        }
+      },
+    },
+  ],
+  'ag-rerank': [
+    {
+      level: 'harder',
+      title: 'Retrieve widely, then read carefully',
+      blurb: 'Two stages exist because the accurate method is too slow to run over everything.',
+      where: [
+        { sym: 'recall@m', is: 'how often the answer is somewhere in the m candidates fetched' },
+        { sym: 'm', is: 'candidates handed to the reranker' },
+        { sym: 'k', is: 'passages that survive into the context' },
+      ],
+      how:
+        'The first stage decides the ceiling and the second decides how much of it you keep. Raising m is cheap and raises the ceiling; raising k spends context and attention.',
+      inputs: [
+        n('m', 'candidates fetched', 50, 1, 200, 1, 'Cheap. This sets the ceiling — the reranker cannot rank what was never fetched.'),
+        n('k', 'passages kept', 5, 1, 20, 1, 'Expensive in context. More is not better past the point the answer is in.'),
+        n('rr', 'reranker puts the answer in the top k (%)', 88, 0, 100, 1, 'How good the careful second pass is.'),
+        n('ms', 'first stage recall at 50 (%)', 92, 0, 100, 1, 'Recall of the fast stage at fifty candidates.'),
+      ],
+      run: (v) => {
+        // Recall grows with candidates and saturates; a plain log fit is enough here.
+        const base = v.ms / 100
+        const recall = Math.min(base * (Math.log(v.m + 1) / Math.log(51)), 1)
+        const end = recall * (v.rr / 100)
+        return {
+          formula: 'P(answer in context) = recall@m × P(reranker keeps it)',
+          steps: [
+            ['recall at m candidates', `${f(recall * 100, 1)}%`],
+            ['reranker keeps it', `${f(v.rr, 0)}%`],
+            ['passages in context', String(v.k)],
+          ],
+          result: `${f(end * 100, 1)}% of answers reach the model`,
+          note: 'Push the candidates from 10 to 50 and the ceiling climbs sharply for almost nothing. Push k from 5 to 20 and it barely moves, while the context bill triples. Fetch widely; keep narrowly.',
+        }
+      },
+    },
+  ],
+  'ag-rag-eval': [
+    {
+      level: 'basic',
+      title: 'Which half is broken',
+      blurb: 'End-to-end quality cannot tell a search problem from a model problem.',
+      where: [
+        { sym: 'recall@k', is: 'the share of questions whose answer passage was retrieved' },
+        { sym: 'faithful', is: 'the share of answers fully supported by what was retrieved' },
+        { sym: 'end-to-end', is: 'the single number people usually report' },
+      ],
+      how:
+        'Measure the two separately, then multiply. Whichever term is lower is the one worth working on, and it is almost never the one people guess.',
+      inputs: [
+        n('rec', 'recall@k (%)', 78, 0, 100, 1, 'Did the right passage come back at all.'),
+        n('faith', 'answers fully supported (%)', 91, 0, 100, 1, 'Did the answer actually use it, without inventing anything.'),
+        n('q', 'questions in the set', 30, 5, 500, 5, 'Thirty labelled questions beat any amount of opinion.'),
+      ],
+      run: (v) => {
+        const end = (v.rec / 100) * (v.faith / 100)
+        const se = Math.sqrt((end * (1 - end)) / v.q)
+        return {
+          formula: 'end-to-end ≈ recall@k × faithfulness',
+          steps: [
+            ['retrieval', `${f(v.rec, 0)}%`],
+            ['generation', `${f(v.faith, 0)}%`],
+            ['±1 standard error', `±${f(se * 100, 1)} points`],
+          ],
+          result: `${f(end * 100, 1)}% end to end`,
+          note: 'The error bar is the part people skip. At thirty questions a five-point change is inside the noise, so a tuning session that moves the number by four points has demonstrated nothing at all.',
+        }
+      },
+    },
+  ],
+  'ag-graphrag': [
+    {
+      level: 'harder',
+      title: 'What the graph costs to build',
+      blurb: 'Graph RAG moves work from query time to index time. Price it before committing.',
+      where: [
+        { sym: 'docs', is: 'documents in the corpus' },
+        { sym: 'extract', is: 'tokens spent reading one document to pull out entities and relations' },
+        { sym: 'queries', is: 'how many questions the index will serve before it is rebuilt' },
+      ],
+      how:
+        'Index cost is paid once per document; retrieval cost is paid per query. Divide one by the other to find the break-even, and compare it with how many multi-hop questions you actually expect.',
+      inputs: [
+        n('docs', 'documents', 20000, 100, 1000000, 100, 'Every one must be read by a model, which is the whole cost.'),
+        n('extract', 'tokens to extract from one document', 2200, 200, 20000, 100, 'Reading plus the extraction output.'),
+        n('queries', 'questions before a rebuild', 5000, 10, 1000000, 10, 'Spread the index cost over these.'),
+        n('perq', 'extra tokens per graph query', 3000, 100, 40000, 100, 'Traversal and community summaries are not free at query time either.'),
+      ],
+      run: (v) => {
+        const index = v.docs * v.extract
+        const query = v.queries * v.perq
+        const perQuestion = index / Math.max(v.queries, 1)
+        return {
+          formula: 'per question = index cost ÷ questions + query cost',
+          steps: [
+            ['index build', `${(index / 1e6).toFixed(1)}M tokens`],
+            ['all queries', `${(query / 1e6).toFixed(1)}M tokens`],
+            ['index amortised per question', `${Math.round(perQuestion).toLocaleString()} tokens`],
+          ],
+          result: `${Math.round(perQuestion + v.perq).toLocaleString()} tokens per question`,
+          note: 'At twenty thousand documents the index alone is tens of millions of tokens. Spread over five thousand questions that is bearable; spread over fifty it is absurd. Graph RAG is a volume decision before it is a quality one.',
+        }
+      },
+    },
+  ],
+  'ag-multihop': [
+    {
+      level: 'basic',
+      title: 'Why traversal has to be bounded',
+      blurb: 'Every hop multiplies the neighbourhood. Typed edges are what keep it finite.',
+      where: [
+        { sym: 'b', is: 'the average number of edges leaving a node' },
+        { sym: 'h', is: 'hops allowed' },
+        { sym: 'bʰ', is: 'roughly how many nodes are reachable within h hops' },
+        { sym: 'types', is: 'the share of edges a typed traversal is allowed to follow' },
+      ],
+      how:
+        'Raise b to the power of h, then cut it by the share of edge types you permit. Restricting types divides the base, which is why it beats capping depth at keeping traversal finite.',
+      inputs: [
+        n('b', 'edges per node', 8, 2, 40, 1, 'A well-connected graph. Entity graphs from real corpora are often worse.'),
+        n('h', 'hops', 3, 1, 6, 1, 'Two is where plain retrieval fails. Four is where naive traversal does.'),
+        n('types', 'edge types followed (%)', 100, 5, 100, 5, 'Drop it to 25% and watch the reachable set collapse without losing the answer.'),
+      ],
+      run: (v) => {
+        const b = v.b * (v.types / 100)
+        const reach = Math.pow(b, v.h)
+        const full = Math.pow(v.b, v.h)
+        return {
+          formula: 'reachable ≈ (b × types)ʰ',
+          steps: [
+            ['effective branching', f(b, 1)],
+            ['reachable, untyped', Math.round(full).toLocaleString()],
+            ['hops', String(v.h)],
+          ],
+          result: `${Math.round(reach).toLocaleString()} nodes reachable`,
+          note: 'Eight edges a node over four hops reaches four thousand nodes — which is not retrieval, it is reading the corpus slowly. Allowing only a quarter of the edge types cuts the same traversal to sixteen, and the answer path is almost always inside those types.',
+        }
+      },
+    },
+  ],
+  'ag-topology': [
+    {
+      level: 'basic',
+      title: 'The same agents, wired two ways',
+      blurb: 'A chain multiplies. A fan-out complements. The shape decides, not the agents.',
+      where: [
+        { sym: 'p', is: 'the chance one agent gets its part right' },
+        { sym: 'n', is: 'how many agents' },
+        { sym: 'pⁿ', is: 'a chain: every one of them must be right' },
+        { sym: '1−(1−p)ⁿ', is: 'a fan-out: one of them being right is enough' },
+      ],
+      how:
+        'The same n and the same p, arranged two ways. The gap between the two lines is the entire argument for redundancy over sequence — with the catch that a fan-out needs something able to recognise the right answer.',
+      inputs: [
+        n('p', 'each agent is right (%)', 90, 50, 99, 1, 'Identical for both shapes, so any difference below is purely structural.'),
+        n('n', 'agents', 5, 1, 12, 1, 'More agents makes a chain worse and a fan-out better. Same number either way.'),
+        n('pick', 'picker recognises the best (%)', 90, 30, 100, 1, 'The fan-out rests entirely on this. Below about 70% it stops being worth the cost.'),
+      ],
+      run: (v) => {
+        const p = v.p / 100
+        const serial = Math.pow(p, v.n)
+        const parallel = (1 - Math.pow(1 - p, v.n)) * (v.pick / 100)
+        return {
+          formula: 'chain = pⁿ,   fan-out = [1 − (1−p)ⁿ] × picker',
+          steps: [
+            ['chain of n', `${f(serial * 100, 1)}%`],
+            ['fan-out of n', `${f(parallel * 100, 1)}%`],
+            ['single agent', `${f(v.p, 0)}%`],
+          ],
+          result: `${f((parallel - serial) * 100, 1)} points between the two shapes`,
+          note: 'Five 90% agents in a chain finish 59% of the time — worse than one agent alone. The same five as a fan-out with a decent picker finish above 89%. Notice that the chain is below the single agent: splitting work between agents subtracts reliability unless something is added back.',
+        }
+      },
+    },
+  ],
+  'ag-hierarchy': [
+    {
+      level: 'harder',
+      title: 'What each summary costs',
+      blurb: 'Every level up is a summary, and every summary drops something.',
+      where: [
+        { sym: 'levels', is: 'how deep the hierarchy is' },
+        { sym: 'keep', is: 'the share of the detail that survives one summarising pass' },
+        { sym: 'keep^levels', is: 'what reaches the top' },
+      ],
+      how:
+        'Raise the survival rate to the power of the depth. The loss is multiplicative, which is why the third level so rarely pays for itself.',
+      inputs: [
+        n('levels', 'levels of hierarchy', 3, 1, 6, 1, 'Each one buys context room and costs fidelity.'),
+        n('keep', 'detail surviving one summary (%)', 80, 30, 100, 1, 'Generous. Real summarising of a long transcript does worse.'),
+        n('facts', 'facts that matter', 25, 1, 200, 1, 'Requirements, constraints, identifiers — the things a paraphrase quietly loses.'),
+      ],
+      run: (v) => {
+        const survive = Math.pow(v.keep / 100, v.levels)
+        return {
+          formula: 'reaching the top = keep^levels',
+          steps: [
+            ['per level', `${f(v.keep, 0)}%`],
+            ['levels', String(v.levels)],
+            ['facts lost', f(v.facts * (1 - survive), 1)],
+          ],
+          result: `${f(survive * 100, 1)}% of the detail reaches the top`,
+          note: 'Three levels at a generous 80% each leaves barely half the detail intact — twelve of twenty-five facts gone. Passing the original requirement down verbatim alongside the summary costs a few hundred tokens and removes most of this.',
+        }
+      },
+    },
+  ],
+  'ag-bench': [
+    {
+      level: 'harder',
+      title: 'How many runs before you believe it',
+      blurb: 'A single green run tells you almost nothing about a stochastic system.',
+      where: [
+        { sym: 'p', is: 'the agent’s true pass rate — the thing you are trying to measure' },
+        { sym: 'runs', is: 'how many times each case is run' },
+        { sym: 'SE', is: 'standard error of the measured rate' },
+      ],
+      how:
+        'Standard error falls with the square root of the number of runs, so four times the runs halves the error bar. Compare that bar against the improvement you are claiming.',
+      inputs: [
+        n('p', 'true pass rate (%)', 70, 1, 99, 1, 'What the agent actually does, which you never observe directly.'),
+        n('cases', 'cases in the suite', 20, 1, 200, 1, 'Distinct tasks.'),
+        n('runs', 'runs per case', 3, 1, 50, 1, 'Repeats. This is the dial that turns anecdote into measurement.'),
+        n('claim', 'improvement being claimed (points)', 5, 1, 40, 1, 'The change you want to announce. Compare it with the error bar below.'),
+      ],
+      run: (v) => {
+        const p = v.p / 100
+        const N = v.cases * v.runs
+        const se = Math.sqrt((p * (1 - p)) / N) * 100
+        const detectable = 1.96 * se * Math.sqrt(2)
+        return {
+          formula: 'SE = √[p(1−p) ÷ N],   N = cases × runs',
+          steps: [
+            ['total runs', String(N)],
+            ['±1 standard error', `±${f(se, 1)} points`],
+            ['smallest change you could detect', `${f(detectable, 1)} points`],
+          ],
+          result: v.claim >= detectable ? 'the claim is measurable' : 'the claim is inside the noise',
+          note: 'Twenty cases run once gives an error bar of about ten points, which means a five-point improvement is indistinguishable from nothing. Running each case five times costs five times the compute and is the difference between an opinion and a result.',
+        }
+      },
+    },
+  ],
+  'ag-hitl': [
+    {
+      level: 'basic',
+      title: 'Approval fatigue',
+      blurb: 'Gate everything and the gates stop being read.',
+      where: [
+        { sym: 'actions', is: 'actions per run' },
+        { sym: 'gated', is: 'the share that stop for approval' },
+        { sym: 'attention', is: 'the chance a given prompt is actually read rather than waved through' },
+      ],
+      how:
+        'Multiply the number of prompts by how carefully each is read. Attention per prompt is modelled as falling with the square of the number of prompts — a judgement, not a measurement, but the direction is not in doubt. Total scrutiny is what catches a bad action, and it peaks well short of gating everything.',
+      inputs: [
+        n('actions', 'actions per run', 40, 1, 200, 1, 'How much the agent does.'),
+        n('gated', 'actions gated (%)', 60, 0, 100, 5, 'Raise it and each prompt gets less attention. There is a maximum, and it is not at 100%.'),
+        n('bad', 'actions that are wrong (%)', 4, 0, 30, 0.5, 'What the gates exist to catch.'),
+      ],
+      run: (v) => {
+        const prompts = v.actions * (v.gated / 100)
+        // Attention decays faster than the prompts multiply — the tenth
+        // confirmation of the hour is not read like the first — so total
+        // scrutiny peaks well short of gating everything.
+        const attention = 1 / (1 + Math.pow(prompts / 8, 2))
+        const wrong = v.actions * (v.bad / 100)
+        const caught = wrong * (v.gated / 100) * attention
+        return {
+          formula: 'caught = wrong × gated × attention(prompts)',
+          steps: [
+            ['approval prompts per run', f(prompts, 1)],
+            ['attention per prompt', `${f(attention * 100, 0)}%`],
+            ['wrong actions per run', f(wrong, 2)],
+          ],
+          result: `${f(caught, 2)} of ${f(wrong, 2)} caught`,
+          note: 'Gating everything produces the most prompts and among the fewest catches. Gate the handful of actions that cannot be undone, let the rest through, and the prompts that remain get read — which is the only way a gate does anything.',
+        }
+      },
+    },
+  ],
+}
+
+
+/**
+ * Second rungs for the agentic nodes that carry a playground. Every
+ * lab-carrying node in the atlas has a ladder rather than a single example —
+ * the climb is the teaching — and `collect` sorts each node's list by level, so
+ * these can be authored separately from the first rungs above.
+ */
+const AGENTS_MORE: Record<string, Example[]> = {
+  'ag-loop': [
+    {
+      level: 'harder',
+      title: 'When the window runs out',
+      blurb: 'The loop has a hard stop nobody sets: the context fills.',
+      where: [
+        { sym: 'limit', is: 'the model’s context window, in tokens' },
+        { sym: 'c₀', is: 'the fixed prefix that is always present' },
+        { sym: 'ō', is: 'tokens one observation adds per turn' },
+        { sym: '(limit − c₀) ÷ ō', is: 'how many turns fit before the window is full' },
+      ],
+      how:
+        'Subtract the fixed prefix from the window, divide by what each turn adds. Summarising does not raise the ceiling so much as reset the counter — at a cost in detail every time it runs.',
+      inputs: [
+        n('limit', 'context window (k tokens)', 128, 4, 1000, 4, 'The hard ceiling. Bigger windows buy turns linearly, which is less than it sounds against a task that needs hundreds.'),
+        n('c0', 'fixed prefix (tokens)', 2000, 100, 40000, 100, 'System prompt and tool definitions. A large tool set eats the window before the work starts.'),
+        n('obs', 'tokens per observation', 400, 20, 8000, 10, 'Untrimmed tool output is the fastest way to run out of turns.'),
+        n('keep', 'summary keeps (%)', 20, 5, 90, 5, 'How much of the transcript survives a compaction. Lower buys more turns and loses more detail.'),
+      ],
+      run: (v) => {
+        const limit = v.limit * 1000
+        const room = Math.max(limit - v.c0, 1)
+        const turns = Math.floor(room / v.obs)
+        const after = Math.floor((room - room * (v.keep / 100)) / v.obs)
+        return {
+          formula: 'turns ≈ (limit − c₀) ÷ ō',
+          steps: [
+            ['room for the transcript', `${Math.round(room).toLocaleString()} tokens`],
+            ['turns before it is full', String(turns)],
+            ['turns each compaction buys back', String(after)],
+          ],
+          result: `${turns} turns, then compact`,
+          note: 'A task needing more turns than this cannot be done by letting the transcript grow, whatever the model. That is the arithmetic behind writing findings to a file instead of leaving them in the conversation.',
+        }
+      },
+    },
+  ],
+  'ag-react': [
+    {
+      level: 'basic',
+      title: 'One action a turn, or several',
+      blurb: 'Batching actions saves turns and spends them on work that was already wrong.',
+      where: [
+        { sym: 'k', is: 'actions issued per turn before looking at any result' },
+        { sym: 'q', is: 'the chance an observation would have changed the next action' },
+        { sym: '(1−q)ⁱ', is: 'the chance the i-th action in a batch is still the right one' },
+      ],
+      how:
+        'The first action in a batch is always informed; the second is chosen blind to the first result, the third blind to two. Sum the survival chances to get how many of the k actually earn their cost.',
+      inputs: [
+        n('k', 'actions per turn', 4, 1, 12, 1, 'Set it to 1 and you have ReAct. Raise it and turns get cheaper while actions get wasteful.'),
+        n('q', 'an observation would change the plan (%)', 35, 0, 90, 5, 'How surprising the environment is. In a well-understood one, batching is nearly free.'),
+        n('need', 'actions the task needs', 20, 1, 100, 1, 'Total useful work.'),
+      ],
+      run: (v) => {
+        const q = v.q / 100
+        let useful = 0
+        for (let i = 0; i < v.k; i++) useful += Math.pow(1 - q, i)
+        const perTurn = useful
+        const turns = Math.ceil(v.need / Math.max(perTurn, 0.01))
+        const issued = turns * v.k
+        return {
+          formula: 'useful per turn = Σᵢ₌₀..ₖ₋₁ (1−q)ⁱ',
+          steps: [
+            ['useful actions per turn', f(perTurn, 2)],
+            ['turns needed', String(turns)],
+            ['actions issued', String(issued)],
+          ],
+          result: `${f((useful / v.k) * 100, 0)}% of issued actions land`,
+          note: 'At k = 1 every action is informed and nothing is wasted, which is exactly what ReAct buys. Batching four at a time in a surprising environment throws away roughly a third of them — and the wasted ones are not free, because their results still enter the context.',
+        }
+      },
+    },
+    {
+      level: 'harder',
+      title: 'Is the thought worth its tokens?',
+      blurb: 'Reasoning before acting costs tokens on every turn and saves whole turns.',
+      where: [
+        { sym: 'thought', is: 'tokens spent reasoning before each action' },
+        { sym: 'saved', is: 'the share of wrong actions the thought prevents' },
+        { sym: 'retry', is: 'what a wrong action costs: the action, its observation and the turn' },
+      ],
+      how:
+        'Multiply the thought cost by every turn, then set it against the retries avoided. The thought wins whenever a retry is expensive relative to a paragraph of reasoning, which is nearly always once a tool call touches the outside world.',
+      inputs: [
+        n('turns', 'turns in the run', 20, 1, 100, 1, 'The thought is paid on every one of these.'),
+        n('thought', 'tokens of reasoning per turn', 120, 0, 2000, 10, 'Short is fine. The value is in there being one at all, not in its length.'),
+        n('wrong', 'actions wrong without it (%)', 25, 0, 80, 1, 'How often acting straight from the last observation goes astray.'),
+        n('saved', 'of those, prevented by thinking (%)', 60, 0, 100, 5, 'Reasoning catches the ones a moment of attention would catch.'),
+        n('retry', 'tokens a wrong action costs', 900, 50, 10000, 50, 'The call, its output, and the turn spent recovering.'),
+      ],
+      run: (v) => {
+        const spent = v.turns * v.thought
+        const avoided = v.turns * (v.wrong / 100) * (v.saved / 100) * v.retry
+        return {
+          formula: 'net = turns·wrong·saved·retry − turns·thought',
+          steps: [
+            ['spent thinking', `${Math.round(spent).toLocaleString()} tokens`],
+            ['retries avoided', f(v.turns * (v.wrong / 100) * (v.saved / 100), 1)],
+            ['saved', `${Math.round(avoided).toLocaleString()} tokens`],
+          ],
+          result: avoided > spent ? `net saving ${Math.round(avoided - spent).toLocaleString()} tokens` : `net cost ${Math.round(spent - avoided).toLocaleString()} tokens`,
+          note: 'Drag the reasoning down to zero tokens and the run gets cheaper per turn and longer overall. The break-even is low because a wrong tool call costs a whole turn, not a sentence — which is why the thought earns its place even when it looks like padding.',
+        }
+      },
+    },
+  ],
+  'ag-rag': [
+    {
+      level: 'harder',
+      title: 'Retrieve or retrain?',
+      blurb: 'The same knowledge, installed two ways. Price both against how fast it changes.',
+      where: [
+        { sym: 'churn', is: 'how much of the corpus changes in a month' },
+        { sym: 'index', is: 'cost of embedding and indexing one document' },
+        { sym: 'tune', is: 'cost of a fine-tuning run that installs the same knowledge' },
+      ],
+      how:
+        'Retrieval pays per changed document; fine-tuning pays a flat run however little changed. Divide one by the other to find the churn rate at which they cross — and note that retrieval is also current the same day, which the crossing point does not capture.',
+      inputs: [
+        n('docs', 'documents', 50000, 100, 2000000, 100, 'Corpus size.'),
+        n('churn', 'changed per month (%)', 8, 0.5, 100, 0.5, 'How fast the knowledge moves. This is the number that decides it.'),
+        n('index', 'cost to index one document (p)', 0.02, 0.001, 2, 0.001, 'Embedding plus storage, per document.'),
+        n('tune', 'cost of one fine-tuning run (£)', 400, 10, 20000, 10, 'Flat, whether one document changed or all of them.'),
+      ],
+      run: (v) => {
+        const changed = v.docs * (v.churn / 100)
+        const reindex = (changed * v.index) / 100
+        return {
+          formula: 'retrieval = changed × index,   fine-tune = flat per run',
+          steps: [
+            ['documents changed a month', Math.round(changed).toLocaleString()],
+            ['re-index those', `£${reindex.toFixed(2)}`],
+            ['one fine-tuning run', `£${v.tune.toFixed(2)}`],
+          ],
+          result: reindex < v.tune ? 'retrieval is cheaper' : 'fine-tuning is cheaper',
+          note: 'The cost crossing is not the whole argument and usually not the important half. Retrieval is current within minutes, keeps the documents out of the weights, and can cite what it used; a fine-tune does none of those however cheap it gets.',
+        }
+      },
+    },
+  ],
+  'ag-index': [
+    {
+      level: 'basic',
+      title: 'Cosine similarity, by hand',
+      blurb: 'Three numbers each. Work out how close two meanings are.',
+      where: [
+        { sym: 'q · d', is: 'the dot product: multiply matching components and add' },
+        { sym: '‖q‖', is: 'the length of the query vector' },
+        { sym: '‖d‖', is: 'the length of the document vector' },
+        { sym: 'cos', is: 'the dot product divided by both lengths — the angle, with length divided out' },
+      ],
+      how:
+        'Multiply component by component, add, then divide by both lengths. Dividing is what makes a long document no more similar than a short one — without it every score would just rank by size.',
+      inputs: [
+        n('q1', 'query: billing', 0.9, -1, 1, 0.05, 'The query leaning heavily on one axis.'),
+        n('q2', 'query: refunds', 0.4, -1, 1, 0.05, 'And a little on another.'),
+        n('q3', 'query: performance', 0, -1, 1, 0.05, 'Set it away from zero and watch an unrelated document climb.'),
+        n('d1', 'document: billing', 0.8, -1, 1, 0.05, 'The document on the same axes.'),
+        n('d2', 'document: refunds', 0.5, -1, 1, 0.05, 'Scale both document numbers up together: the score does not move.'),
+        n('d3', 'document: performance', 0.1, -1, 1, 0.05, 'A little off-topic content costs surprisingly little.'),
+      ],
+      run: (v) => {
+        const q = [v.q1, v.q2, v.q3]
+        const d = [v.d1, v.d2, v.d3]
+        const dotp = q.reduce((s, x, i) => s + x * d[i], 0)
+        const nq = Math.sqrt(q.reduce((s, x) => s + x * x, 0))
+        const nd = Math.sqrt(d.reduce((s, x) => s + x * x, 0))
+        const cos = dotp / Math.max(nq * nd, 1e-9)
+        return {
+          formula: 'cos(q, d) = (q · d) ÷ (‖q‖ · ‖d‖)',
+          steps: [
+            ['q · d', f(dotp, 3)],
+            ['‖q‖', f(nq, 3)],
+            ['‖d‖', f(nd, 3)],
+          ],
+          result: `cos = ${f(cos, 3)}`,
+          note: 'Double every number in the document and the score is unchanged — that is the division by length doing its job. A real embedding does this in a thousand dimensions rather than three; nothing else about the arithmetic differs.',
+        }
+      },
+    },
+  ],
+  'ag-graphrag': [
+    {
+      level: 'basic',
+      title: 'Why multi-hop defeats plain retrieval',
+      blurb: 'Every fact in the chain has to be retrieved. Miss one and the answer is gone.',
+      where: [
+        { sym: 'r', is: 'the chance any one needed document comes back in the top k' },
+        { sym: 'h', is: 'how many documents the answer is spread across' },
+        { sym: 'rʰ', is: 'the chance all of them come back in the same retrieval' },
+      ],
+      how:
+        'Raise the per-document chance to the power of the number of hops. Retrieval scores each document against the question independently, so a document holding one link of the chain does not resemble the question at all — which is why r is low here to begin with.',
+      inputs: [
+        n('r', 'one needed document retrieved (%)', 70, 5, 100, 1, 'Generous for a multi-hop question: a link in a chain rarely looks like the question that needs it.'),
+        n('h', 'documents the answer spans', 3, 1, 6, 1, 'One is an ordinary lookup. Three is an ordinary business question.'),
+        n('k', 'passages retrieved', 5, 1, 40, 1, 'Raising k lifts r a little and floods the context a lot.'),
+      ],
+      run: (v) => {
+        const r = v.r / 100
+        const all = Math.pow(r, v.h)
+        return {
+          formula: 'P(all needed documents retrieved) = rʰ',
+          steps: [
+            ['per document', `${f(v.r, 0)}%`],
+            ['documents needed', String(v.h)],
+            ['passages retrieved', String(v.k)],
+          ],
+          result: `${f(all * 100, 1)}% of such questions are answerable`,
+          note: 'At a generous 70% a question spanning three documents is answerable a third of the time — and the failure is silent, because the model answers confidently from the two-thirds of the chain it did get. Following edges asks a different question of the data and does not decay this way.',
+        }
+      },
+    },
+  ],
+  'ag-topology': [
+    {
+      level: 'harder',
+      title: 'When another agent stops helping',
+      blurb: 'The marginal agent in a fan-out buys less each time, and costs the same.',
+      where: [
+        { sym: 'p', is: 'the chance one agent is right' },
+        { sym: 'n', is: 'agents already in the fan-out' },
+        { sym: '(1−p)ⁿ', is: 'the chance all n are wrong — what adding one more can rescue' },
+      ],
+      how:
+        'The n-th agent only matters when every earlier one failed, which happens with probability (1−p)ⁿ⁻¹. That falls geometrically while the cost stays flat, so there is always a point past which another agent is simply spending.',
+      inputs: [
+        n('p', 'each agent is right (%)', 85, 40, 99, 1, 'Higher accuracy makes redundancy pay off sooner and run out faster.'),
+        n('n', 'agents in the fan-out', 3, 1, 10, 1, 'Step it up one at a time and watch the marginal gain collapse.'),
+        n('cost', 'cost per agent', 1, 0.1, 20, 0.1, 'Flat, however little the agent adds.'),
+        n('value', 'value of getting it right', 30, 1, 200, 1, 'What the answer is worth. Raise it and more redundancy becomes rational.'),
+      ],
+      run: (v) => {
+        const p = v.p / 100
+        const at = 1 - Math.pow(1 - p, v.n)
+        const before = 1 - Math.pow(1 - p, v.n - 1)
+        const gain = at - before
+        const worth = gain * v.value
+        return {
+          formula: 'marginal gain = (1−p)ⁿ⁻¹ × p',
+          steps: [
+            ['with n−1 agents', `${f(before * 100, 2)}%`],
+            ['with n agents', `${f(at * 100, 2)}%`],
+            ['this agent is worth', f(worth, 2)],
+          ],
+          result: worth > v.cost ? 'the n-th agent pays for itself' : 'the n-th agent is waste',
+          note: 'At 85% each, the second agent adds thirteen points and the fourth adds half a point for the same money. Nearly every fan-out worth building is two or three wide — and what it is really bounded by is the picker, not the arithmetic here.',
+        }
+      },
+    },
+  ],
+  'ag-parallel': [
+    {
+      level: 'basic',
+      title: 'Sectioning and voting are opposite sums',
+      blurb: 'The same shape on the diagram, and arithmetic that runs the other way.',
+      where: [
+        { sym: 'p', is: 'the chance one worker gets its piece right' },
+        { sym: 'm', is: 'how many workers there are' },
+        { sym: 'pᵐ', is: 'sectioning: every piece has to be right' },
+        { sym: '1−(1−p)ᵐ', is: 'voting: one attempt being right is enough' },
+      ],
+      how:
+        'Split the work and you need all of them; repeat the work and you need any of them. The fan-out on the diagram looks identical in both cases, which is exactly why the distinction gets lost.',
+      inputs: [
+        n('p', 'each worker is right (%)', 88, 40, 99, 1, 'Identical for both patterns, so the difference below is purely which one you built.'),
+        n('m', 'workers', 4, 1, 10, 1, 'More workers makes sectioning worse and voting better.'),
+      ],
+      run: (v) => {
+        const p = v.p / 100
+        const sectioned = Math.pow(p, v.m)
+        const voted = 1 - Math.pow(1 - p, v.m)
+        return {
+          formula: 'sectioning = pᵐ,   voting = 1 − (1−p)ᵐ',
+          steps: [
+            ['sectioning', `${f(sectioned * 100, 1)}%`],
+            ['voting', `${f(voted * 100, 1)}%`],
+            ['one worker alone', `${f(v.p, 0)}%`],
+          ],
+          result: `${f((voted - sectioned) * 100, 1)} points apart`,
+          note: 'Four workers at 88% finish a sectioned task 60% of the time and a voted one 99.98% of the time. Same diagram, same agents, forty points apart — so "we run them in parallel" says nothing until you say which of the two you mean.',
+        }
+      },
+    },
+    {
+      level: 'harder',
+      title: 'The joiner is the whole thing',
+      blurb: 'Whatever puts the pieces back together multiplies everything before it.',
+      where: [
+        { sym: 'workers', is: 'the parallel step: sectioned or voted' },
+        { sym: 'j', is: 'the chance the joiner merges or picks correctly' },
+        { sym: 'overlap', is: 'the share of sections that contradict each other and must be reconciled' },
+      ],
+      how:
+        'The joiner sits in series with everything, so its reliability multiplies the lot. Overlap makes its job harder: contradictory sections are where a merger quietly picks the wrong one.',
+      inputs: [
+        n('p', 'each worker is right (%)', 88, 40, 99, 1, 'The parallel half.'),
+        n('m', 'workers', 4, 1, 10, 1, 'More sections means more seams for the joiner to get wrong.'),
+        n('j', 'joiner is right (%)', 92, 40, 100, 1, 'Usually an afterthought, and usually the binding constraint.'),
+        n('overlap', 'sections that contradict (%)', 15, 0, 60, 1, 'Independent parts do not overlap. Real decompositions do.'),
+      ],
+      run: (v) => {
+        const p = v.p / 100
+        const sectioned = Math.pow(p, v.m)
+        // Each contradicting seam is another chance for the joiner to pick wrong.
+        const seams = (v.m - 1) * (v.overlap / 100)
+        const joiner = Math.pow(v.j / 100, 1 + seams)
+        const end = sectioned * joiner
+        return {
+          formula: 'end to end = pᵐ × j^(1 + seams)',
+          steps: [
+            ['workers', `${f(sectioned * 100, 1)}%`],
+            ['contradicting seams', f(seams, 2)],
+            ['joiner', `${f(joiner * 100, 1)}%`],
+          ],
+          result: `${f(end * 100, 1)}% end to end`,
+          note: 'Take the workers to 99% and the result barely moves; take the joiner to 99% and it jumps. Effort spent on the merge step returns more than effort spent on the agents doing the work, which is the reverse of where teams usually put it.',
+        }
+      },
+    },
+  ],
+}
+
 export const EXAMPLES: Record<string, Example[]> = collect(
   CORE, CLASSICAL, DEEP, LLM, WIDER, REST, CONTAINERS, MATHS, MATHS_MORE, MATHS_BASICS,
-  LAB_WORKINGS, LAB_LADDERS, LAB_LADDERS_2, PIPELINE,
+  LAB_WORKINGS, LAB_LADDERS, LAB_LADDERS_2, PIPELINE, AGENTS, AGENTS_MORE,
 )

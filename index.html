@@ -21,7 +21,7 @@
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="AI Atlas" />
     <meta property="og:title" content="AI Atlas — the journey from symbolic AI to AGI" />
-    <meta property="og:description" content="Six zoomable maps from the maths up to the frontier: 353 topics, 488 worked examples with every number editable, and 26 playgrounds." />
+    <meta property="og:description" content="Seven zoomable maps from the maths up to agentic AI: 422 topics, 515 worked examples with every number editable, and 30 playgrounds." />
     <meta property="og:url" content="%VITE_SITE%/" />
     <meta property="og:image" content="%VITE_SITE%/og.png" />
     <meta property="og:image:type" content="image/png" />
@@ -31,7 +31,7 @@
     <!-- Twitter reads og: for title and description; it needs its own card type. -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content="%VITE_SITE%/og.png" />
-    <meta name="description" content="Six zoomable maps from the maths up to the frontier: 353 topics, 488 worked examples with every number editable, and 26 playgrounds." />
+    <meta name="description" content="Seven zoomable maps from the maths up to agentic AI: 422 topics, 515 worked examples with every number editable, and 30 playgrounds." />
     <title>AI Atlas — the journey from symbolic AI to AGI</title>
 
     <!--
@@ -63,8 +63,13 @@
         animation: boot-pulse 1.5s ease-in-out infinite; }
       .boot-graph .root { flex: 0 0 190px; height: 92px; }
       /* Whichever view is about to render is the one the skeleton draws. */
+      .boot-globe { flex: 1 1 auto; display: none; align-items: center; justify-content: center; }
+      .boot-globe i { display: block; width: min(46vh, 300px); aspect-ratio: 1; border-radius: 50%;
+        background: var(--surface-2, #161d2e); animation: boot-pulse 1.5s ease-in-out infinite; }
       :root[data-view='graph'] .boot-map { display: none }
       :root[data-view='graph'] .boot-graph { display: flex }
+      :root[data-view='globe'] .boot-map { display: none }
+      :root[data-view='globe'] .boot-globe { display: flex }
       .boot-panel { flex: 0 0 390px; border-left: 1px solid var(--line, #1d2433);
         background: var(--bg-panel, #0c1120); padding: 22px 24px; display: flex;
         flex-direction: column; gap: 12px; }
@@ -87,12 +92,12 @@
       .boot-graph .col .card:nth-child(4) { animation-delay: 330ms }
       @keyframes boot-pulse { 0%, 100% { opacity: 0.4 } 50% { opacity: 0.85 } }
       @media (prefers-reduced-motion: reduce) {
-        .boot-tile, .boot-line, .boot-graph .card { animation: none; opacity: 0.6 }
+        .boot-tile, .boot-line, .boot-graph .card, .boot-globe i { animation: none; opacity: 0.6 }
       }
       @media (max-width: 860px) {
         .boot-body { flex-direction: column }
         .boot-panel { flex: 1 1 auto; border-left: 0; border-top: 1px solid var(--line, #1d2433) }
-        .boot-map, .boot-graph { flex: 0 0 46vh }
+        .boot-map, .boot-graph, .boot-globe { flex: 0 0 46vh }
         .boot-graph { gap: 22px; padding: 18px }
       }
     </style>
@@ -120,8 +125,9 @@
        * opens on the graph unless told otherwise.
        */
       try {
+        var v = localStorage.getItem('il.view')
         document.documentElement.dataset.view =
-          localStorage.getItem('il.view') === 'cards' ? 'cards' : 'graph'
+          v === 'cards' || v === 'globe' ? v : 'graph'
       } catch (e) {
         document.documentElement.dataset.view = 'graph'
       }
@@ -143,6 +149,7 @@
               <i class="card"></i><i class="card"></i><i class="card"></i><i class="card"></i>
             </div>
           </div>
+          <div class="boot-globe"><i></i></div>
           <div class="boot-panel">
             <i class="boot-line w1"></i><i class="boot-line w2"></i>
             <i class="boot-line w3"></i><i class="boot-line w2"></i>

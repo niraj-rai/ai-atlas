@@ -32,7 +32,14 @@ export type Circuit =
   | { kind: 'timeline'; ticks: string[] }
 
 /** Each map is a world. They link into one another, forming one atlas. */
-export type WorldId = 'ai' | 'llm' | 'classical-ml' | 'deep-learning' | 'frontier' | 'maths'
+export type WorldId =
+  | 'ai'
+  | 'llm'
+  | 'classical-ml'
+  | 'deep-learning'
+  | 'frontier'
+  | 'maths'
+  | 'agents'
 
 export interface World {
   id: WorldId
@@ -71,6 +78,10 @@ export type PlaygroundKey =
   | 'distribution'
   | 'inference'
   | 'architect'
+  | 'agentloop'
+  | 'retrieval'
+  | 'graphrag'
+  | 'topology'
 
 export interface TopicNode {
   id: string

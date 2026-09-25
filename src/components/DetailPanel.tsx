@@ -35,6 +35,10 @@ const DerivativeLab = lazy(() => import('./labs/DerivativeLab'))
 const DistributionLab = lazy(() => import('./labs/DistributionLab'))
 const InferenceLab = lazy(() => import('./labs/InferenceLab'))
 const ArchitectLab = lazy(() => import('./labs/ArchitectLab'))
+const AgentLoopLab = lazy(() => import('./labs/AgentLoopLab'))
+const RetrievalLab = lazy(() => import('./labs/RetrievalLab'))
+const GraphRagLab = lazy(() => import('./labs/GraphRagLab'))
+const TopologyLab = lazy(() => import('./labs/TopologyLab'))
 
 interface Props {
   node: Placed
@@ -255,6 +259,10 @@ export function DetailPanel({ node, world, onFocus, onEnterWorld, onLeaveWorld, 
               {data.playground === 'distribution' && <DistributionLab />}
               {data.playground === 'inference' && <InferenceLab />}
               {data.playground === 'architect' && <ArchitectLab />}
+              {data.playground === 'agentloop' && <AgentLoopLab />}
+              {data.playground === 'retrieval' && <RetrievalLab />}
+              {data.playground === 'graphrag' && <GraphRagLab />}
+              {data.playground === 'topology' && <TopologyLab />}
             </Suspense>
           </section>
         )}

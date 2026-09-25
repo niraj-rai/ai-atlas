@@ -160,7 +160,7 @@ export const llmWorld: TopicNode = {
             'Byte-Pair Encoding starts from individual bytes and repeatedly merges the most frequent adjacent pair into a new token. Common words end up as one token; rare words stay split into pieces.',
           math: [
             {
-              tex: '(a, b) = \\arg\\max_{(x,y)} \; \\mathrm{count}(xy)',
+              tex: '(a, b) = \\arg\\max_{(x,y)} \\; \\mathrm{count}(xy)',
               note: 'At each step, merge whichever adjacent pair occurs most often in the corpus. Do this ~100,000 times and you have a vocabulary.',
               where: [
                 { sym: '(x, y)', is: 'any pair of neighbouring symbols in the corpus' },
@@ -194,7 +194,7 @@ export const llmWorld: TopicNode = {
             'The output of this stage: a plain array of integers. Every downstream stage works only with these numbers.',
           math: [
             {
-              tex: '\\text{"interactive"} \;\\longrightarrow\; [\\,45\\,,\;2543\\,,\;488\\,]',
+              tex: '\\text{"interactive"} \\;\\longrightarrow\\; [\\,45\\,,\\;2543\\,,\\;488\\,]',
               note: 'One string becomes a short list of indices into the vocabulary.',
               where: [
                 { sym: '\\text{"interactive"}', is: 'the raw text you typed — the model never sees this' },
@@ -809,7 +809,7 @@ export const llmWorld: TopicNode = {
             'Adaptive where top-k is fixed: take tokens in descending order until their cumulative probability passes p. When the model is confident the set is tiny; when it is unsure the set widens.',
           math: [
             {
-              tex: '\\mathcal{V}_p = \\min \\left\\{ \\mathcal{V}\' \\subseteq \\mathcal{V} \;\\middle|\; \\sum_{i \\in \\mathcal{V}\'} p_i \\ge p \\right\\}',
+              tex: '\\mathcal{V}_p = \\min \\left\\{ \\mathcal{V}\' \\subseteq \\mathcal{V} \\;\\middle|\\; \\sum_{i \\in \\mathcal{V}\'} p_i \\ge p \\right\\}',
               note: 'The smallest group of top tokens whose probabilities add up to p.',
               where: [
                 { sym: '\\mathcal{V}', is: 'the full vocabulary' },

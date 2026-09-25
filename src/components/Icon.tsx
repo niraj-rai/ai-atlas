@@ -39,6 +39,7 @@ export type IconName =
   | 'wave'
   | 'image'
   | 'compass'
+  | 'globe'
   | 'search'
   | 'sun'
   | 'moon'
@@ -193,6 +194,14 @@ const PATHS: Record<IconName, ReactElement> = {
     <>
       <circle cx="11" cy="11" r="6.5" />
       <path d="m16 16 4.5 4.5" />
+    </>
+  ),
+  globe: (
+    <>
+      <circle cx="12" cy="12" r="8.5" />
+      {/* One meridian and two parallels: enough to read as a sphere at 14px. */}
+      <path d="M12 3.5c-3 2.6-3 14.4 0 17M12 3.5c3 2.6 3 14.4 0 17" />
+      <path d="M4 9.2h16M4 14.8h16" />
     </>
   ),
   compass: (

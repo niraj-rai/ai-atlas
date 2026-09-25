@@ -8,12 +8,18 @@ import { ZoomMap } from './components/ZoomMap'
 const GraphView = lazy(() =>
   import('./components/GraphView').then((m) => ({ default: m.GraphView })),
 )
+// The globe pulls in d3-geo and is the view a reader is least often on, so it
+// waits until it is asked for, like the graph.
+const GlobeView = lazy(() =>
+  import('./components/GlobeView').then((m) => ({ default: m.GlobeView })),
+)
 import { DetailPanel } from './components/DetailPanel'
 import { Breadcrumb } from './components/Breadcrumb'
 import { SearchPalette } from './components/SearchPalette'
 import { TopicSelect } from './components/TopicSelect'
 import { BrandMark } from './components/BrandMark'
 import { GraphSkeleton } from './components/GraphSkeleton'
+import { GlobeSkeleton } from './components/GlobeSkeleton'
 import { Icon } from './components/Icon'
 import { applyTheme, initialPref, resolveTheme, storePref, systemTheme, watchSystem } from './lib/theme'
 import type { Theme, ThemePref } from './lib/theme'
@@ -23,7 +29,15 @@ import './App.css'
 const TOUR_MS = 7000
 const SIMPLE_KEY = 'il.simple'
 const VIEW_KEY = 'il.view'
-type View = 'cards' | 'graph'
+type View = 'cards' | 'graph' | 'globe'
+/** The order the view button cycles through. */
+const VIEWS: View[] = ['cards', 'graph', 'globe']
+const VIEW_NAME: Record<View, string> = { cards: 'Cards', graph: 'Graph', globe: 'Globe' }
+const VIEW_ICON: Record<View, 'grid' | 'network' | 'globe'> = {
+  cards: 'grid',
+  graph: 'network',
+  globe: 'globe',
+}
 
 interface Place {
   world: WorldId
@@ -70,7 +84,8 @@ export default function App() {
   const [theme, setTheme] = useState<Theme>(() => resolveTheme(initialPref()))
   const [view, setView] = useState<View>(() => {
     try {
-      return localStorage.getItem(VIEW_KEY) === 'cards' ? 'cards' : 'graph'
+      const saved = localStorage.getItem(VIEW_KEY)
+      return VIEWS.includes(saved as View) ? (saved as View) : 'graph'
     } catch {
       return 'graph'
     }
@@ -92,6 +107,8 @@ export default function App() {
     layouts.current.set(place.world, built)
     return built
   }, [place.world])
+
+  const nextView = VIEWS[(VIEWS.indexOf(view) + 1) % VIEWS.length]
 
   const index = useMemo(() => indexById(root), [root])
   const stages = useMemo(() => root.children ?? [], [root])
@@ -283,17 +300,15 @@ export default function App() {
         <button
           className="icon-btn view-toggle"
           disabled={!mapOpen}
-          onClick={() => setView((v) => (v === 'cards' ? 'graph' : 'cards'))}
+          onClick={() => setView((v) => VIEWS[(VIEWS.indexOf(v) + 1) % VIEWS.length])}
           title={
             !mapOpen
-              ? 'Show the map to switch between the card map and the graph'
-              : view === 'cards'
-                ? 'Switch to the node graph'
-                : 'Switch to the card map'
+              ? 'Show the map to switch between the three views'
+              : `Switch to the ${VIEW_NAME[nextView].toLowerCase()} view`
           }
         >
-          <Icon name={view === 'cards' ? 'network' : 'grid'} size={14} />
-          <span>{view === 'cards' ? 'Graph' : 'Cards'}</span>
+          <Icon name={VIEW_ICON[nextView]} size={14} />
+          <span>{VIEW_NAME[nextView]}</span>
         </button>
 
         <button
@@ -353,7 +368,7 @@ export default function App() {
         {/* Deliberately not keyed on the world: remounting would reset the
             viewport before it has measured itself, leaving the new map stuck at
             scale 1. The fit effect already re-flies whenever the root changes. */}
-        {view === 'cards' ? (
+        {view === 'cards' && (
           <ZoomMap
             root={root}
             index={index}
@@ -364,9 +379,24 @@ export default function App() {
             legend={legend}
             setLegend={setLegend}
           />
-        ) : (
+        )}
+        {view === 'graph' && (
           <Suspense fallback={<GraphSkeleton />}>
             <GraphView
+              root={root}
+              index={index}
+              focusId={place.nodeId}
+              onFocus={focus}
+              onEnterWorld={enterWorld}
+              theme={theme}
+              legend={legend}
+              setLegend={setLegend}
+            />
+          </Suspense>
+        )}
+        {view === 'globe' && (
+          <Suspense fallback={<GlobeSkeleton />}>
+            <GlobeView
               root={root}
               index={index}
               focusId={place.nodeId}

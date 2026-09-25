@@ -3,8 +3,8 @@
 [![Open the atlas](https://img.shields.io/badge/Open_the_atlas-niraj--rai.github.io-2563eb?style=for-the-badge)](https://niraj-rai.github.io/ai-atlas/)
 [![Deploy](https://github.com/niraj-rai/ai-atlas/actions/workflows/deploy.yml/badge.svg)](https://github.com/niraj-rai/ai-atlas/actions/workflows/deploy.yml)
 
-Learn the whole field by zooming into it. Every topic is a map: you start at the
-globe view, click a region, and the viewport flies into it revealing the
+Learn the whole field by zooming into it. Every topic is a map: you start zoomed
+all the way out, click a region, and the viewport flies into it revealing the
 machinery inside — as deep as the content goes. Some tiles are doorways that
 open an entire map of their own.
 
@@ -13,7 +13,7 @@ Statistical Learning → Deep Learning → Attention → Generative AI → the F
 Because the root of any map is tiled left to right, the eras read as a timeline
 for free, with the flow animation as the arrow of time.
 
-## The six maps
+## The seven maps
 
 | Map | What is on it |
 | --- | --- |
@@ -21,10 +21,11 @@ for free, with the flow animation as the arrow of time.
 | **Classical ML** | The learning loop, regression, classification, trees and ensembles, unsupervised methods, evaluation — down to ridge vs lasso, the kernel trick, k-means++ and data leakage. |
 | **Deep Learning** | The neuron, training deep stacks, CNNs, RNNs and LSTMs, generative architectures — down to dying ReLU, Adam, receptive fields, the three LSTM gates and latent diffusion. |
 | **Large Language Models** | One prompt end to end: tokenizer, embeddings, the transformer stack, sampling, and the loop back round. |
+| **Agentic AI** | What happens when a model is given the ability to act: the loop, the classical agent taxonomy, tools and planning, memory, retrieval and Graph RAG, multi-agent topologies, evaluation and the security of an agent that can be talked into things. |
 | **The Frontier** | AGI, superintelligence, alignment, the unsolved problems, and where there is still room to work — down to superposition, verifiers, mixture-of-experts and the robotics data bottleneck. |
 | **The Maths** | Linear algebra, calculus, probability, statistics, information theory and floating point — built from the ground up, with every idea naming where it turns up on the other maps. |
 
-All six maps run four levels deep (root → region → topic → detail), so a tile like
+All seven maps run four levels deep (root → region → topic → detail), so a tile like
 *Classification → Support vector machines → The kernel trick* is a real
 destination with its own maths, not a dead end.
 
@@ -41,7 +42,7 @@ the app finds which map holds that id.
 **Controls** — scroll to zoom, drag to pan, click a tile to enter it, click the
 tile you're inside to step back out, `Esc` to go up a level.
 
-**Two views of the same atlas**, switchable from the toolbar and remembered:
+**Three views of the same atlas**, cycled from the toolbar and remembered:
 
 - **Graph** (the default) — the tree as a left-to-right node graph, built on
   React Flow. Starts at the root and unfolds: click a node to open its children,
@@ -60,6 +61,17 @@ tile you're inside to step back out, `Esc` to go up a level.
   weight, with key points and formulas appearing as you zoom in. It centres and
   closes in on the selection by construction — that *is* the zoom — so it needs
   no auto-centre toggle of its own.
+- **Globe** — the atlas as a sphere, which is where the metaphor started.
+  Latitude carries the map's own order: the root sits at the south pole, the
+  first region rides a ring just north of it, and each region after it sits
+  further north again — so on the AI globe, reading south to north is reading
+  1950 to now. Longitude carries breadth: everything inside a region is spread
+  left to right around its ring, with a parent centred over its children. Drag
+  to turn it, scroll or pinch to zoom, click a dot to read it — and selecting
+  anything turns the globe to face it. *Spin* sets it drifting, and respects
+  `prefers-reduced-motion`. Half the atlas is always behind the sphere, which is
+  the point of a globe rather than a defect in one; on a phone or a short canvas
+  it shows the regions only and fills in detail where you are.
 
 **Search jumps to any tile in any map.** <kbd>/</kbd> or <kbd>⌘K</kbd> opens it —
 <kbd>⌘K</kbd> even while you are typing in a playground. It ranks every node in
@@ -133,16 +145,17 @@ moves, so clicking never yanks the canvas around. Shortcuts stand down while you
 are typing in a playground, and any key held with ⌘/Ctrl/Alt is left to the
 browser.
 
-Selecting a node drives the same side panel either way, so the two views share
-one focus and you can switch without losing your place. One toggle in the
-toolbar, and the choice is remembered.
+Selecting a node drives the same side panel whichever view is up, so all three
+share one focus and you can switch without losing your place. One button in the
+toolbar cycles them, and the choice is remembered.
 
 **It works on tablets and phones.** Below 860px the map and panel stack
 vertically; below 560px the toolbar collapses to icons. The graph re-fits itself
 whenever the window changes size or a tablet is rotated.
 
-React Flow is a third of the bundle, so the graph view is lazy-loaded — the cards
-view never pays for it.
+React Flow is a third of the bundle and d3-geo is the globe's alone, so both of
+those views are lazy-loaded — the cards view never pays for either, and each has
+a skeleton of its own shape while its chunk arrives.
 
 **Light and dark** both ship — the toggle sits in the toolbar, defaults to your
 system preference and is remembered. Every colour is a token, and content accents
@@ -164,7 +177,7 @@ the important thing on the card. Once a card is big enough it shows its bullets
 without the side panel. Tiles too narrow to name show their icon
 instead, and every tile has a tooltip.
 
-**Every formula is dismantled.** All 75 in the maps — and all 221 in the worked
+**Every formula is dismantled.** All 109 in the maps — and all 515 in the worked
 examples — carry a `where`
 legend — each symbol rendered beside what it stands for, including the operators
 that do the work (Σ, ∏, ⊙, the subscripts, the transposes) — and a `how` line
@@ -178,14 +191,14 @@ widest symbol in that formula, so the rows line up and nothing is clipped.
 actual arithmetic the topic describes, with every number on a slider. Change the
 temperature and the softmax recomputes; change the learning rate and the step
 overshoots; change the bit width and the model stops fitting on the card. All
-All 472 of them carry the same breakdown the formulas do — a `where` legend
+515 of them carry the same breakdown the formulas do — a `where` legend
 naming every symbol in the line being computed, a `how` line saying what the sum
-does and what the answer means, and a `hint` under all 1,136 sliders saying what
+does and what the answer means, and a `hint` under all 1,287 sliders saying what
 that dial is and what changes as you move it ("past about 0.25 here the new
 weight overshoots to the far side").
 
 **Every tile that carries a playground also works its arithmetic through**, and
-every one now has a ladder rather than a single rung: all 86 lab-carrying nodes have
+every one now has a ladder rather than a single rung: all 95 lab-carrying nodes have
 at least two levels behind them. One denoising step by hand beside the diffusion
 lab, one pass through the LSTM gates beside the RNN lab, the same gradient turned
 into three different-sized steps beside the optimiser lab.
@@ -395,6 +408,35 @@ the side panel:
   twenty still comes back significant. Press *Make it underpowered* and detection
   falls to 13% while the average significant result lands near 1.00 against a
   truth of 0.30 — the winner's curse, in numbers you can re-run.
+- **Agent loop** (`#/agents/ag-loop`, `#/agents/ag-react`) — one real run, stepped
+  a turn at a time: thought, action, observation, with the context and the
+  running token total on screen throughout. Seven turns whose final transcript is
+  1,415 tokens cost 8,210 to produce, because every turn re-reads everything
+  before it. Two of the seven turns change nothing — one reproduces the failure,
+  one runs the tests — and the reliability panel shows why they are the reason
+  the run works at all.
+- **Retrieval** (`#/agents/ag-rag`, `#/agents/ag-index`) — twelve passages, two
+  retrievers, three questions. BM25 is the real BM25 over the real text; the
+  dense side uses hand-placed vectors on five named axes, the same honest
+  shortcut the embedding lab takes. *Watch BM25 miss* asks "can I get my money
+  back" and keyword search confidently returns the billing page, because that is
+  where the word "money" is. *Watch vectors miss* asks what E-4412 means and the
+  error reference lands fourth, because the vectors cannot separate four pages
+  about limits. *Fuse them* recovers the answer in both, for one extra query.
+- **Graph RAG** (`#/agents/ag-graphrag`) — the question plain retrieval cannot
+  answer. Nine documents, none holding two links of the chain; the two
+  highest-scoring passages are a survey that mentions March and a strike from
+  2019 in the wrong region. Raise the hop budget and the traversal walks from the
+  strike to the two affected customers in four hops — then take one hop more and
+  watch it drag in a mill and a region with no strike in them, which is why real
+  systems restrict edge types rather than just capping depth.
+- **Topologies** (`#/agents/ag-topology`, `#/agents/ag-parallel`) — six ways to
+  wire the same work, with the arithmetic that decides between them. Four agents
+  at 90% each, chained, finish 56% of the time — worse than the single agent they
+  replaced. The same agents as a fan-out with a good picker reach 95%. Then break
+  the picker and it collapses to 50% with the attempts completely unchanged,
+  which is the whole argument about where the engineering in a parallel design
+  actually lives.
 - **KL divergence** (`#/classical-ml/cml-kl`) — two distributions over the same
   outcomes, both drawn by hand: drag either chart and every number recomputes.
   *Match Q to P* drives the divergence to exactly 0.000, the only way it ever
@@ -488,7 +530,7 @@ chain all the way back to Artificial Intelligence. Any node can carry
 `world: 'llm'` to become a doorway; the map marks it with a dashed border and an
 OPEN MAP tag, and clicking a focused doorway enters it.
 
-Adding a sixth map is: write the tree, add one entry to the registry, and point
+Adding an eighth map is: write the tree, add one entry to the registry, and point
 some tile at it.
 
 ### The mark
@@ -645,7 +687,7 @@ around the explanation: a **definition** that stands alone, **when to use it**
 to), and **where it shows up** (named, concrete uses). They are folded into the
 tree in `content/index.ts`, so anything written inline on a node still wins.
 
-**All 353 nodes**, across all six maps. `whenToUse` is omitted on the 37
+**All 422 nodes**, across all seven maps. `whenToUse` is omitted on the 37
 narrative nodes — eras, historical events, and open arguments such as *The AI
 winters* or *Capability is not goals* — where inventing advice would be worse
 than saying nothing; the panel simply omits the block.
@@ -666,7 +708,7 @@ its editable inputs and a pure `run(values)` that returns the working and the
 result, so the panel renders a live calculator with no per-topic UI. Adding one
 to any node is a single entry in that file.
 
-**488 examples across 89% of the atlas** (316 of 353 nodes). Every node with distinct computable
+**515 examples across 79% of the atlas** (335 of 422 nodes). Every node with distinct computable
 content has one. The remaining nodes are of three kinds, and a calculator on any
 of them would be invented rather than illustrative:
 
@@ -706,10 +748,14 @@ fetched when someone opens that lab, one encoding at a time.
 - [x] Optimiser surfaces, receptive-field growth, residual-stream accumulation
 - [x] Worked examples on the overview nodes, attribution on 90 nodes, and a React Flow graph view
 - [x] Search across every map, and a KL divergence tile with a draw-your-own-distributions playground
-- [x] Definition, when to use it and where it shows up on all 353 nodes
-- [x] Worked examples wherever one is illustrative rather than invented — 488 over 316 of 353 nodes
+- [x] Definition, when to use it and where it shows up on all 422 nodes
+- [x] Worked examples wherever one is illustrative rather than invented — 515 over 335 of 422 nodes
+- [x] **Agentic AI**: the agent loop, the classical taxonomy, tools and planning, memory, RAG and Graph RAG, multi-agent topologies, evaluation and prompt-injection risk — 69 nodes with four playgrounds of their own
+- [x] **Globe view**: the atlas as a sphere, south to north as the map's own order
 
-The last 37 nodes are deliberately without a calculator: eras (*Statistical
+The remaining 87 nodes are deliberately without a calculator: eras (*Statistical
 Learning*), historical events (*ImageNet 2012*), open arguments (*Capability is
-not goals*) and the doorways between maps. There is no honest sum to put on
-them, and inventing one would teach a number rather than an idea.
+not goals*), the doorways between maps, and most of the agentic map, where the
+content is a design decision rather than a sum — there is nothing to compute
+about a blackboard topology or about BDI commitment. Inventing a number for any
+of them would teach the number rather than the idea.

@@ -6,6 +6,7 @@ import { classicalMlWorld } from './classicalMl'
 import { deepLearningWorld } from './deepLearning'
 import { frontierWorld } from './frontier'
 import { mathsWorld } from './maths'
+import { agentsWorld } from './agents'
 
 /** The atlas. `parent` records which tile in which map opens each world, so
  *  breadcrumbs can chain all the way back up to Artificial Intelligence. */
@@ -38,6 +39,12 @@ export const WORLDS: Record<WorldId, World> = {
     title: 'The Frontier',
     root: frontierWorld,
     parent: { world: 'ai', nodeId: 'era-frontier' },
+  },
+  agents: {
+    id: 'agents',
+    title: 'Agentic AI',
+    root: agentsWorld,
+    parent: { world: 'ai', nodeId: 'gen-agents' },
   },
   maths: {
     id: 'maths',
